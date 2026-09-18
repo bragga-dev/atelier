@@ -11,7 +11,7 @@ from luxury_fashion.apps.cart.models.cart_model import Cart
 
 
 def _with_items(qs: QuerySet[Cart]) -> QuerySet[Cart]:
-    items_qs = CartItem.objects.select_related("variant_id__product_id__product_category_id").prefetch_related("variant_id__product_id__images")
+    items_qs = CartItem.objects.select_related("product_id").prefetch_related("product_id__categories", "product_id__images")
     return qs.prefetch_related(Prefetch("items", queryset=items_qs))
 
 

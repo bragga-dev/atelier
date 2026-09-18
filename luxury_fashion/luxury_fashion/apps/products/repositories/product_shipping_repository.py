@@ -1,16 +1,16 @@
 """
 ProductShipping Repository — persistência dos dados de frete (peso/dimensões)
-de uma ProductVariant.
+de um Product.
 """
 from decimal import Decimal
 from typing import Optional
 
 from luxury_fashion.apps.products.models.product_shipping_model import ProductShipping
-from luxury_fashion.apps.products.models.product_variant_model import ProductVariant
+from luxury_fashion.apps.products.models.product_model import Product
 
 
 def create_shipping(
-    variant_id: ProductVariant,
+    product_id: Product,
     weight: Decimal,
     height: Decimal,
     width: Decimal,
@@ -18,7 +18,7 @@ def create_shipping(
     quantity: int = 1,
 ) -> ProductShipping:
     shipping = ProductShipping(
-        variant_id=variant_id,
+        product_id=product_id,
         weight=weight,
         height=height,
         width=width,
@@ -43,13 +43,13 @@ def delete_shipping(shipping: ProductShipping) -> None:
     shipping.delete()
 
 
-def get_or_create_shipping(variant_id: ProductVariant, **defaults) -> tuple[ProductShipping, bool]:
+def get_or_create_shipping(product_id: Product, **defaults) -> tuple[ProductShipping, bool]:
     """
-    Útil no formulário de cadastro de variante: garante que sempre exista
+    Útil no formulário de cadastro de produto: garante que sempre exista
     um registro de frete associado, mesmo que criado vazio/zerado a princípio.
     """
     shipping, created = ProductShipping.objects.get_or_create(
-        variant_id=variant_id,
+        product_id=product_id,
         defaults=defaults,
     )
     return shipping, created

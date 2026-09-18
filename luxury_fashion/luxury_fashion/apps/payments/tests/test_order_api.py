@@ -82,10 +82,10 @@ class TestCreateOrderEndpoint:
         )
         assert resp.status_code == 400
 
-    def test_returns_409_when_stock_is_insufficient(self, client, user, client_profile, address, cart, variant):
+    def test_returns_409_when_stock_is_insufficient(self, client, user, client_profile, address, cart, product):
         from luxury_fashion.apps.cart.models.cart_item_model import CartItem
 
-        CartItem.objects.create(cart_id=cart, variant_id=variant, quantity_item=variant.stock + 1)
+        CartItem.objects.create(cart_id=cart, product_id=product, quantity_item=product.stock + 1)
 
         resp = client.post(
             "/api/orders/",

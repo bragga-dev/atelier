@@ -17,7 +17,7 @@ from luxury_fashion.apps.cart.services.cart_item_service import (
 )
 from luxury_fashion.apps.cart.services.cart_service import clear_cart_for_client, get_cart_for_client
 from luxury_fashion.apps.core.exceptions.cart_exception import CartItemNotFound, CartNotFound, InsufficientStock
-from luxury_fashion.apps.core.exceptions.products_exception import VariantNotFound
+from luxury_fashion.apps.core.exceptions.products_exception import ProductNotFound
 from luxury_fashion.apps.core.exceptions.user import UserNotFound
 from luxury_fashion.apps.core.permissions.auth_classes import ClientOnlyAuth
 from luxury_fashion.apps.core.schemas.deafult_schema import MessageOut
@@ -63,10 +63,10 @@ def clear_my_cart_router(request):
     "/items",
     response={201: CartOut, 404: MessageOut, 409: MessageOut, 400: MessageOut},
     auth=ClientOnlyAuth(),
-    summary="Adiciona uma variante ao carrinho",
+    summary="Adiciona um produto ao carrinho",
     description=(
-        "Adiciona `quantity_item` unidades da variante ao carrinho. Se a "
-        "variante já estiver no carrinho, soma na quantidade existente."
+        "Adiciona `quantity_item` unidades do produto ao carrinho. Se o "
+        "produto já estiver no carrinho, soma na quantidade existente."
     ),
 )
 @ratelimit(key="user", rate="30/m", block=True)
@@ -74,7 +74,7 @@ def add_cart_item_router(request, payload: CartItemCreateIn):
     try:
         user: User = request.auth
         return 201, add_item_to_cart(user.user_id, payload)
-    except (VariantNotFound, UserNotFound) as e:
+    except (ProductNotFound, UserNotFound) as e:
         return 404, {"detail": str(e)}
     except InsufficientStock as e:
         return 409, {"detail": str(e)}

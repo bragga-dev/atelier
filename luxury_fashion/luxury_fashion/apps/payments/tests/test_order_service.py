@@ -24,7 +24,7 @@ pytestmark = pytest.mark.django_db
 
 
 class TestCreateOrderFromCart:
-    def test_creates_order_from_cart_items_and_debits_stock(self, user, client_profile, address, cart, cart_item, variant):
+    def test_creates_order_from_cart_items_and_debits_stock(self, user, client_profile, address, cart, cart_item, product):
         payload = OrderCreateIn(shipping_address_id=address.address_id)
 
         result = create_order_from_cart(user_id=user.user_id, data=payload)
@@ -33,8 +33,8 @@ class TestCreateOrderFromCart:
         assert len(result.items) == 1
         assert result.items[0].order_item_quantity == cart_item.quantity_item
 
-        variant.refresh_from_db()
-        assert variant.stock == 5 - cart_item.quantity_item
+        product.refresh_from_db()
+        assert product.stock == 5 - cart_item.quantity_item
 
     def test_clears_the_cart_after_checkout(self, user, client_profile, address, cart, cart_item):
         payload = OrderCreateIn(shipping_address_id=address.address_id)
@@ -92,18 +92,18 @@ class TestCreateOrderFromCart:
             create_order_from_cart(user_id=user.user_id, data=payload)
 
     def test_raises_insufficient_stock_when_quantity_exceeds_stock(
-        self, user, client_profile, address, cart, variant
+        self, user, client_profile, address, cart, product
     ):
         from luxury_fashion.apps.cart.models.cart_item_model import CartItem
 
-        CartItem.objects.create(cart_id=cart, variant_id=variant, quantity_item=variant.stock + 1)
+        CartItem.objects.create(cart_id=cart, product_id=product, quantity_item=product.stock + 1)
 
         payload = OrderCreateIn(shipping_address_id=address.address_id)
         with pytest.raises(InsufficientStock):
             create_order_from_cart(user_id=user.user_id, data=payload)
 
-        variant.refresh_from_db()
-        assert variant.stock == 5  # nada foi debitado
+        product.refresh_from_db()
+        assert product.stock == 5  # nada foi debitado
 
 
 class TestGetOrderForClient:
@@ -134,20 +134,20 @@ class TestListOrdersForClient:
 
 
 class TestCancelOrderByClient:
-    def test_cancels_pending_order_and_restocks_variant(self, order, user, variant):
+    def test_cancels_pending_order_and_restocks_product(self, order, user, product):
         from luxury_fashion.apps.payments.models.order_item_model import OrderItem
 
         OrderItem.objects.create(
-            order_id=order, variant_id=variant, order_item_quantity=2, order_item_price=variant.price
+            order_id=order, product_id=product, order_item_quantity=2, order_item_price=product.price
         )
-        variant.stock = 0
-        variant.save(update_fields=["stock"])
+        product.stock = 0
+        product.save(update_fields=["stock"])
 
         result = cancel_order_by_client(user_id=user.user_id, order_id=order.order_id, reason="Mudei de ideia")
 
         assert result.order_status.value == Order.StatusOrder.CANCELLED
-        variant.refresh_from_db()
-        assert variant.stock == 2
+        product.refresh_from_db()
+        assert product.stock == 2
 
     def test_raises_order_not_found_when_order_belongs_to_another_user(self, order, other_user):
         with pytest.raises(OrderNotFound):

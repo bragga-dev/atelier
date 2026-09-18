@@ -50,23 +50,23 @@ class TestCreateOrder:
 
 
 class TestBulkCreateOrderItems:
-    def test_creates_one_item_per_entry(self, order, variant, other_variant):
+    def test_creates_one_item_per_entry(self, order, product, other_product):
         items = bulk_create_order_items(
             order=order,
             items=[
-                {"variant": variant, "quantity": 2, "unit_price": variant.price},
-                {"variant": other_variant, "quantity": 1, "unit_price": other_variant.price},
+                {"product": product, "quantity": 2, "unit_price": product.price},
+                {"product": other_product, "quantity": 1, "unit_price": other_product.price},
             ],
         )
 
         assert len(items) == 2
         assert OrderItem.objects.filter(order_id=order).count() == 2
 
-    def test_runs_full_clean_on_each_item(self, order, variant):
+    def test_runs_full_clean_on_each_item(self, order, product):
         with pytest.raises(ValidationError):
             bulk_create_order_items(
                 order=order,
-                items=[{"variant": variant, "quantity": 0, "unit_price": variant.price}],
+                items=[{"product": product, "quantity": 0, "unit_price": product.price}],
             )
 
 

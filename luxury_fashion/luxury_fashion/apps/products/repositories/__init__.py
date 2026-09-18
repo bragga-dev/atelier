@@ -14,16 +14,8 @@ from luxury_fashion.apps.products.repositories.product_repository import (
     delete_product,
     activate_product,
     deactivate_product,
-)
-
-from luxury_fashion.apps.products.repositories.product_variant_repository import (
-    create_variant,
-    update_variant,
-    delete_variant,
-    activate_variant,
-    deactivate_variant,
-    adjust_variant_stock,
-    set_variant_stock,
+    adjust_product_stock,
+    set_product_stock,
 )
 
 from luxury_fashion.apps.products.repositories.product_image_repository import (
@@ -57,14 +49,8 @@ __all__ = [
     "delete_product",
     "activate_product",
     "deactivate_product",
-
-    "create_variant",
-    "update_variant",
-    "delete_variant",
-    "activate_variant",
-    "deactivate_variant",
-    "adjust_variant_stock",
-    "set_variant_stock",
+    "adjust_product_stock",
+    "set_product_stock",
 
     "create_image",
     "update_image",

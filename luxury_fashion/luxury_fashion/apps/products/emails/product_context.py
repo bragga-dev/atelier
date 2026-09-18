@@ -16,7 +16,7 @@ from luxury_fashion.apps.accounts.selectors.client_selector import (
 
 from luxury_fashion.apps.core.permissions.roles import is_client
 from luxury_fashion.apps.payments.models.order_model import Order
-from luxury_fashion.apps.products.models.product_variant_model import ProductVariant
+from luxury_fashion.apps.products.models.product_model import Product
 
 
 _CLIENT_ORDERS_PATH = "/painel/meus-pedidos"
@@ -75,16 +75,13 @@ def format_datetime_br(value: datetime) -> str:
     return value.strftime("%d/%m/%Y às %H:%M")
 
 
-def build_product_block(variant: ProductVariant) -> dict:
+def build_product_block(product: Product) -> dict:
     """Campos de produto + valores praticados no momento do agendamento."""
     return {
-        "produtct_name": variant.product_id.name,
-        "produtct_description": variant.description,
-        "product_image": variant.product_id.images,
-        "product_price": variant.price,
-        "product_size": variant.size,
-        "product_color": variant.color,
-        "product_gender": variant.gender,
+        "produtct_name": product.product_name,
+        "produtct_description": product.description,
+        "product_image": product.images,
+        "product_price": product.price,
     }
 
 def build_order_datetime_block(order: Order) -> dict:

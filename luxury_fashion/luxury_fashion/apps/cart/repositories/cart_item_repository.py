@@ -9,11 +9,11 @@ Toda mutação recalcula os totais do Cart (`Cart.update_totals()`) no fim
 """
 from luxury_fashion.apps.cart.models.cart_item_model import CartItem
 from luxury_fashion.apps.cart.models.cart_model import Cart
-from luxury_fashion.apps.products.models.product_variant_model import ProductVariant
+from luxury_fashion.apps.products.models.product_model import Product
 
 
-def create_item(cart: Cart, variant: ProductVariant, quantity: int = 1) -> CartItem:
-    item = CartItem(cart_id=cart, variant_id=variant, quantity_item=quantity)
+def create_item(cart: Cart, product: Product, quantity: int = 1) -> CartItem:
+    item = CartItem(cart_id=cart, product_id=product, quantity_item=quantity)
     item.save()
     cart.update_totals()
     return item

@@ -29,7 +29,7 @@ from luxury_fashion.apps.core.exceptions.service_exception import (
 from luxury_fashion.apps.payments.models.order_model import Order
 from luxury_fashion.apps.payments.selectors.order_selector import (
     get_order_item_by_id,
-    get_order_item_by_variant,
+    get_order_item_by_product,
 )
 
 from luxury_fashion.apps.reviews.models.reviews_model import Reviews
@@ -60,9 +60,9 @@ from luxury_fashion.apps.reviews.schemas.reviews_schema import (
 def recalculate_product_average_rating(product_id: UUID) -> dict:
     """
     Recalcula a média de avaliações de um produto específico (através de
-    todos os `OrderItem` de suas variantes). Retorna média e total.
+    todos os `OrderItem` que o referenciam). Retorna média e total.
     """
-    order_item_ids = get_order_item_by_variant(product_id=product_id)
+    order_item_ids = get_order_item_by_product(product_id=product_id)
 
     stats = Reviews.objects.filter(order_item_id__in=order_item_ids, is_authorized=True).aggregate(
         avg_rating=Avg("reviews"), total_reviews=Count("reviews_id")
@@ -90,7 +90,7 @@ def _get_own_review(user_id: UUID, reviews_id: UUID) -> Reviews:
 
 def _refresh_aggregates(reviews: Reviews) -> None:
     """Recalcula o agregado do produto ligado à avaliação."""
-    product_id = reviews.order_item_id.variant_id.product_id_id
+    product_id = reviews.order_item_id.product_id_id
     recalculate_product_average_rating(product_id=product_id)
 
 
@@ -167,7 +167,7 @@ def update_own_review(user_id: UUID, reviews_id: UUID, data: ReviewsUpdateIn) ->
 def delete_own_review(user_id: UUID, reviews_id: UUID) -> None:
     """Cliente exclui a própria avaliação."""
     reviews = _get_own_review(user_id=user_id, reviews_id=reviews_id)
-    product_id = reviews.order_item_id.variant_id.product_id_id
+    product_id = reviews.order_item_id.product_id_id
 
     delete_reviews(reviews)
 
@@ -188,7 +188,7 @@ def list_public_reviews_for_order_item(order_item_id: UUID) -> list[ReviewsOut]:
 
 def list_public_reviews_for_product(product_id: UUID) -> list[ReviewsOut]:
     """Lista as avaliações autorizadas de todos os itens de um produto."""
-    order_item_ids = get_order_item_by_variant(product_id=product_id)
+    order_item_ids = get_order_item_by_product(product_id=product_id)
     reviews = Reviews.objects.filter(order_item_id__in=order_item_ids, is_authorized=True).order_by("-created_at")
     return [ReviewsOut.from_orm(r) for r in reviews]
 
@@ -242,6 +242,6 @@ def delete_review_admin(reviews_id: UUID) -> None:
     if reviews is None:
         raise AverageRatingNotFound()
 
-    product_id = reviews.order_item_id.variant_id.product_id_id
+    product_id = reviews.order_item_id.product_id_id
     delete_reviews(reviews=reviews)
     recalculate_product_average_rating(product_id=product_id)

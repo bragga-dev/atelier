@@ -12,25 +12,16 @@ from luxury_fashion.apps.products.services.product_category_service import (
 
 from luxury_fashion.apps.products.services.product_service import (
     activate_product_for_admin,
+    adjust_product_stock_for_admin,
     create_product_for_amdin,
+    create_product_full_for_admin,
     deactivate_product_for_admin,
     delete_product_for_admin,
     get_product_for_all,
     list_products_for_all,
     search_products_for_all,
+    set_product_stock_for_admin,
     update_product_for_admin,
-)
-
-from luxury_fashion.apps.products.services.product_variant_service import (
-    activate_variant_for_admin,
-    adjust_variant_stock_for_admin,
-    create_variant_for_admin,
-    deactivate_variant_for_admin,
-    delete_variant_for_admin,
-    get_variant_for_all,
-    list_variants_for_all,
-    set_variant_stock_for_admin,
-    update_variant_for_admin,
 )
 
 from luxury_fashion.apps.products.services.product_image_service import (
@@ -51,7 +42,7 @@ from luxury_fashion.apps.products.services.product_shipping_service import (
     update_shipping_for_admin,
 )
 
-from luxury_fashion.apps.products.services.frenet_service import   quote_shipping_for_variant
+from luxury_fashion.apps.products.services.frenet_service import quote_shipping_for_product
 
 __all__ = [
 
@@ -66,23 +57,16 @@ __all__ = [
     "upload_category_image_for_admin",
 
     "activate_product_for_admin",
+    "adjust_product_stock_for_admin",
     "create_product_for_amdin",
+    "create_product_full_for_admin",
     "deactivate_product_for_admin",
     "delete_product_for_admin",
     "get_product_for_all",
     "list_products_for_all",
     "search_products_for_all",
+    "set_product_stock_for_admin",
     "update_product_for_admin",
-
-    "activate_variant_for_admin",
-    "adjust_variant_stock_for_admin",
-    "create_variant_for_admin",
-    "deactivate_variant_for_admin",
-    "delete_variant_for_admin",
-    "get_variant_for_all",
-    "list_variants_for_all",
-    "set_variant_stock_for_admin",
-    "update_variant_for_admin",
 
     "delete_image_for_admin",
     "get_image_for_all",
@@ -98,6 +82,6 @@ __all__ = [
     "get_shipping_payload",
     "update_shipping_for_admin",
 
-    "quote_shipping_for_variant",
+    "quote_shipping_for_product",
 
 ]

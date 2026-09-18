@@ -69,7 +69,7 @@ class ShippingUpdateIn(Schema):
 
 class ShippingOut(Schema):
     product_shipping_id: uuid.UUID
-    variant_id: uuid.UUID
+    product_id: uuid.UUID
     weight: Decimal
     height: Decimal
     width: Decimal
@@ -80,7 +80,7 @@ class ShippingOut(Schema):
     def from_orm(cls, shipping: ProductShipping) -> "ShippingOut":
         return cls(
             product_shipping_id=shipping.product_shipping_id,
-            variant_id=shipping.variant_id_id,
+            product_id=shipping.product_id_id,
             weight=shipping.weight,
             height=shipping.height,
             width=shipping.width,
@@ -92,7 +92,7 @@ class ShippingOut(Schema):
 # ── Cotação de frete (Frenet) ──────────────────────────────────────────────
 
 class ShippingQuoteIn(Schema):
-    """Payload de entrada pra cotar o frete de uma variante na Frenet."""
+    """Payload de entrada pra cotar o frete de um produto na Frenet."""
 
     recipient_cep: str
     quantity: Optional[int] = None

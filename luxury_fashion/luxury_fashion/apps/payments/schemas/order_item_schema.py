@@ -10,12 +10,12 @@ from decimal import Decimal
 from ninja import Schema
 
 from luxury_fashion.apps.payments.models.order_item_model import OrderItem
-from luxury_fashion.apps.products.schemas.product_variant_schema import VariantOut
+from luxury_fashion.apps.products.schemas.product_schema import ProductListOut
 
 
 class OrderItemOut(Schema):
     order_item_id: uuid.UUID
-    variant: VariantOut
+    product: ProductListOut
     order_item_quantity: int
     order_item_price: Decimal
     subtotal: Decimal
@@ -24,7 +24,7 @@ class OrderItemOut(Schema):
     def from_orm(cls, item: OrderItem) -> "OrderItemOut":
         return cls(
             order_item_id=item.order_item_id,
-            variant=VariantOut.from_orm(item.variant_id),
+            product=ProductListOut.from_orm(item.product_id),
             order_item_quantity=item.order_item_quantity,
             order_item_price=item.order_item_price,
             subtotal=item.subtotal(),

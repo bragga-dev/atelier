@@ -5,11 +5,11 @@ from ninja import Schema
 from pydantic import field_validator
 
 from luxury_fashion.apps.cart.models.cart_item_model import CartItem
-from luxury_fashion.apps.products.schemas.product_variant_schema import VariantOut
+from luxury_fashion.apps.products.schemas.product_schema import ProductListOut
 
 
 class CartItemCreateIn(Schema):
-    variant_id: uuid.UUID
+    product_id: uuid.UUID
     quantity_item: int = 1
 
     @field_validator("quantity_item")
@@ -33,7 +33,7 @@ class CartItemUpdateIn(Schema):
 
 class CartItemOut(Schema):
     cart_item_id: uuid.UUID
-    variant: VariantOut
+    product: ProductListOut
     quantity_item: int
     unit_price_item: Decimal
     shipping_type: str | None = None
@@ -44,7 +44,7 @@ class CartItemOut(Schema):
     def from_orm(cls, item: CartItem) -> "CartItemOut":
         return cls(
             cart_item_id=item.cart_item_id,
-            variant=VariantOut.from_orm(item.variant_id),
+            product=ProductListOut.from_orm(item.product_id),
             quantity_item=item.quantity_item,
             unit_price_item=item.unit_price_item,
             shipping_type=item.shipping_type,

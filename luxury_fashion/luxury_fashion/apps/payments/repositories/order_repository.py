@@ -36,7 +36,7 @@ def bulk_create_order_items(order: Order, items: Iterable[dict]) -> list[OrderIt
     objs = [
         OrderItem(
             order_id=order,
-            variant_id=item["variant"],
+            product_id=item["product"],
             order_item_quantity=item["quantity"],
             order_item_price=item["unit_price"],
         )

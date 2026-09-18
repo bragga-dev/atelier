@@ -21,7 +21,6 @@ from luxury_fashion.apps.payments.models.order_model import Order
 from luxury_fashion.apps.payments.models.payment_model import Payment
 from luxury_fashion.apps.products.models.product_category_model import ProductCategory
 from luxury_fashion.apps.products.models.product_model import Product
-from luxury_fashion.apps.products.models.product_variant_model import ProductVariant
 
 
 @pytest.fixture(autouse=True)
@@ -94,36 +93,29 @@ def order(user, address) -> Order:
 
 @pytest.fixture
 def product_category(db) -> ProductCategory:
-    return ProductCategory.objects.create(category_name="Vestidos")
+    return ProductCategory.objects.create(category_name="Pulseiras")
 
 
 @pytest.fixture
 def product(product_category) -> Product:
-    return Product.objects.create(product_category_id=product_category, product_name="Vestido Longo")
-
-
-@pytest.fixture
-def variant(product) -> ProductVariant:
-    return ProductVariant.objects.create(
-        product_id=product,
-        size=Product.ProductSize.M,
-        color=Product.ProductColor.BLACK,
-        gender=Product.ProductGender.FEMININO,
+    product = Product.objects.create(
+        product_name="Pulseira de Cristais",
         price=Decimal("199.90"),
         stock=5,
     )
+    product.categories.set([product_category])
+    return product
 
 
 @pytest.fixture
-def other_variant(product) -> ProductVariant:
-    return ProductVariant.objects.create(
-        product_id=product,
-        size=Product.ProductSize.G,
-        color=Product.ProductColor.RED,
-        gender=Product.ProductGender.FEMININO,
+def other_product(product_category) -> Product:
+    product = Product.objects.create(
+        product_name="Pulseira de Macramê",
         price=Decimal("249.90"),
         stock=3,
     )
+    product.categories.set([product_category])
+    return product
 
 
 @pytest.fixture
@@ -132,8 +124,8 @@ def cart(user) -> Cart:
 
 
 @pytest.fixture
-def cart_item(cart, variant) -> CartItem:
-    item = CartItem.objects.create(cart_id=cart, variant_id=variant, quantity_item=2)
+def cart_item(cart, product) -> CartItem:
+    item = CartItem.objects.create(cart_id=cart, product_id=product, quantity_item=2)
     cart.update_totals()
     return item
 

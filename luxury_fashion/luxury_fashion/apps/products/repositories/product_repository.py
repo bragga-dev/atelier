@@ -6,36 +6,49 @@ banco). Qualquer decisão sobre *quais* campos aplicar, *se* uma transição de
 estado é permitida, mensagens de erro de domínio etc. é regra de negócio e
 pertence ao service.
 """
+from decimal import Decimal
+from typing import Iterable, Optional
+
 from luxury_fashion.apps.products.models.product_category_model import ProductCategory
 from luxury_fashion.apps.products.models.product_model import Product
 
 
 def create_product(
     product_name: str,
-    product_category_id: ProductCategory,
+    categories: Iterable[ProductCategory],
+    price: Decimal,
+    stock: int = 0,
+    description: str = "",
     is_active: bool = True,
 ) -> Product:
     product = Product(
         product_name=product_name,
-        product_category_id=product_category_id,
+        price=price,
+        stock=stock,
+        description=description,
         is_active=is_active,
     )
-    product.full_clean()
+    product.full_clean(exclude=["categories"])
     product.save()
+    product.categories.set(categories)
     return product
 
 
-def update_product(product: Product, **fields) -> Product:
+def update_product(product: Product, categories: Optional[Iterable[ProductCategory]] = None, **fields) -> Product:
     """
     Aplica no model exatamente os campos recebidos. A decisão de quais
     campos entram aqui (ex.: só os explicitamente enviados, se `None` deve
     ou não limpar um campo, etc.) é responsabilidade do service — o
     repository apenas persiste o que já chegou pronto.
+
+    `categories`, por ser M2M, é aplicado à parte via `.set()`.
     """
     for attr, value in fields.items():
         setattr(product, attr, value)
-    product.full_clean()
+    product.full_clean(exclude=["categories"])
     product.save()
+    if categories is not None:
+        product.categories.set(categories)
     return product
 
 
@@ -52,4 +65,18 @@ def activate_product(product: Product) -> Product:
 def deactivate_product(product: Product) -> Product:
     product.is_active = False
     product.save(update_fields=["is_active"])
+    return product
+
+
+def adjust_product_stock(product: Product, delta: int) -> Product:
+    product.stock = product.stock + delta
+    product.full_clean(exclude=["categories"])
+    product.save(update_fields=["stock"])
+    return product
+
+
+def set_product_stock(product: Product, stock: int) -> Product:
+    product.stock = stock
+    product.full_clean(exclude=["categories"])
+    product.save(update_fields=["stock"])
     return product

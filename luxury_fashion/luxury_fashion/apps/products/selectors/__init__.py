@@ -21,16 +21,9 @@ from luxury_fashion.apps.products.selectors.product_selector import (
 )
 
 
-from luxury_fashion.apps.products.selectors.product_variant_selector import (
-    get_in_stock_variants_by_product,
-    get_variant_by_id,
-    get_variants_by_product,
-    variant_exists_for_product_size_color_gender
-)
-
 from luxury_fashion.apps.products.selectors.product_shipping_selector import (
-    get_shipping_by_variant,
-    shipping_exists_for_variant,
+    get_shipping_by_product,
+    shipping_exists_for_product,
 )
 
 
@@ -51,12 +44,7 @@ __all__ = [
     "get_product_by_id",
     "product_name_exists",
 
-    "get_in_stock_variants_by_product",
-    "get_variant_by_id",
-    "get_variants_by_product",
-    "variant_exists_for_product_size_color_gender",
-
-    "get_shipping_by_variant",
-    "shipping_exists_for_variant",
+    "get_shipping_by_product",
+    "shipping_exists_for_product",
 
 ]

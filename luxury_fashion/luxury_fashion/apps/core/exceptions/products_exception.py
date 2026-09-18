@@ -31,18 +31,6 @@ class CategoryHasProducts(Exception):
         super().__init__(self.message)
 
 
-class VariantNotFound(Exception):
-    def __init__(self, message=None):
-        self.message = message or _("Variante não encontrada.")
-        super().__init__(self.message)
-
-
-class VariantAlreadyExists(Exception):
-    def __init__(self, message=None):
-        self.message = message or _("Já existe uma variante com esse tamanho, cor e gênero para este produto.")
-        super().__init__(self.message)
-
-
 class ImageNotFound(Exception):
     def __init__(self, message=None):
         self.message = message or _("Imagem não encontrada.")
@@ -51,11 +39,11 @@ class ImageNotFound(Exception):
 
 class ShippingNotFound(Exception):
     def __init__(self, message=None):
-        self.message = message or _("Dados de frete não encontrados para esta variante.")
+        self.message = message or _("Dados de frete não encontrados para este produto.")
         super().__init__(self.message)
 
 
 class ShippingAlreadyExists(Exception):
     def __init__(self, message=None):
-        self.message = message or _("Esta variante já possui dados de frete cadastrados.")
+        self.message = message or _("Este produto já possui dados de frete cadastrados.")
         super().__init__(self.message)

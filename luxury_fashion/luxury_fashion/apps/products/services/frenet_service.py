@@ -1,6 +1,6 @@
 """
-Frenet Service — orquestra a cotação de frete de uma variante de produto
-usando a API da Frenet.
+Frenet Service — orquestra a cotação de frete de um produto usando a API
+da Frenet.
 
 Une duas peças que não se conhecem:
 - os dados físicos (peso/dimensões/CEP de origem) já cadastrados em
@@ -15,41 +15,41 @@ import uuid
 from decimal import Decimal
 from typing import List
 
-from luxury_fashion.apps.core.exceptions import ShippingNotFound, VariantNotFound
+from luxury_fashion.apps.core.exceptions import ProductNotFound, ShippingNotFound
 from luxury_fashion.apps.products.integrations.frenet_client import FrenetClient
 from luxury_fashion.apps.products.schemas.product_shipping_schema import (
     FrenetShippingOptionOut,
     ShippingQuoteIn,
 )
 from luxury_fashion.apps.products.selectors.product_shipping_selector import (
-    get_shipping_by_variant,
+    get_shipping_by_product,
 )
-from luxury_fashion.apps.products.selectors.product_variant_selector import (
-    get_variant_by_id,
+from luxury_fashion.apps.products.selectors.product_selector import (
+    get_product_by_id,
 )
 
 
-def quote_shipping_for_variant(variant_id: uuid.UUID, data: ShippingQuoteIn)-> List[FrenetShippingOptionOut]:
+def quote_shipping_for_product(product_id: uuid.UUID, data: ShippingQuoteIn) -> List[FrenetShippingOptionOut]:
     """
-    Cota o frete de uma variante na Frenet a partir do CEP de destino informado.
+    Cota o frete de um produto na Frenet a partir do CEP de destino informado.
 
     `data.quantity`, quando informado, sobrescreve a quantidade padrão de
     embalagem cadastrada em ProductShipping — é isso que o checkout deve
     mandar (quantidade real no carrinho), não o valor default do cadastro
     do produto. O valor declarado à Frenet (`invoice_value`) é sempre
-    recalculado como `preço da variante × quantidade`, nunca cadastrado
+    recalculado como `preço do produto × quantidade`, nunca cadastrado
     manualmente, pra não ficar dessincronizado do preço real cobrado.
     """
-    variant = get_variant_by_id(variant_id)
-    if variant is None:
-        raise VariantNotFound()
+    product = get_product_by_id(product_id)
+    if product is None:
+        raise ProductNotFound()
 
-    shipping = get_shipping_by_variant(variant_id)
+    shipping = get_shipping_by_product(product_id)
     if shipping is None:
         raise ShippingNotFound()
 
     quantity = data.quantity or shipping.quantity
-    invoice_value = variant.price * quantity
+    invoice_value = product.price * quantity
 
     response = FrenetClient().calculate_shipping(
         seller_cep=shipping.origin_zip_code,

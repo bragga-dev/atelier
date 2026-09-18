@@ -9,7 +9,7 @@ from luxury_fashion.apps.payments.models.payment_model import Payment
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-    readonly_fields = ("variant_id", "order_item_quantity", "order_item_price")
+    readonly_fields = ("product_id", "order_item_quantity", "order_item_price")
     can_delete = False
 
 

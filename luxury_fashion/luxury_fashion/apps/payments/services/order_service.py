@@ -27,8 +27,8 @@ from luxury_fashion.apps.payments.selectors.order_selector import (
     get_order_by_id_and_user,
     get_orders_by_user,
 )
-from luxury_fashion.apps.products.models.product_variant_model import ProductVariant
-from luxury_fashion.apps.products.repositories.product_variant_repository import adjust_variant_stock
+from luxury_fashion.apps.products.models.product_model import Product
+from luxury_fashion.apps.products.repositories.product_repository import adjust_product_stock
 
 
 def _validate_shipping_address(user_id: uuid.UUID, shipping_address_id: uuid.UUID):
@@ -59,20 +59,20 @@ def create_order_from_cart(user_id: uuid.UUID, data: OrderCreateIn) -> OrderOut:
         raise EmptyCart()
 
     # Trava as linhas de estoque envolvidas (ordenado por id pra evitar
-    # deadlock entre checkouts concorrentes que compartilham variantes) e só
+    # deadlock entre checkouts concorrentes que compartilham produtos) e só
     # então valida — sem isso, dois checkouts simultâneos podem ler o mesmo
     # estoque disponível e vender a mesma última unidade duas vezes.
-    variant_ids = sorted({item.variant_id_id for item in cart_items})
-    locked_variants = {
-        v.variant_id: v
-        for v in ProductVariant.objects.select_for_update().filter(variant_id__in=variant_ids)
+    product_ids = sorted({item.product_id_id for item in cart_items})
+    locked_products = {
+        p.product_id: p
+        for p in Product.objects.select_for_update().filter(product_id__in=product_ids)
     }
 
     for item in cart_items:
-        variant = locked_variants[item.variant_id_id]
-        if item.quantity_item > variant.stock:
+        product = locked_products[item.product_id_id]
+        if item.quantity_item > product.stock:
             raise InsufficientStock(
-                f"Estoque insuficiente para {variant}."
+                f"Estoque insuficiente para {product}."
             )
 
     order = create_order(
@@ -87,7 +87,7 @@ def create_order_from_cart(user_id: uuid.UUID, data: OrderCreateIn) -> OrderOut:
         order=order,
         items=[
             {
-                "variant": item.variant_id,
+                "product": item.product_id,
                 "quantity": item.quantity_item,
                 "unit_price": item.unit_price_item,
             }
@@ -96,7 +96,7 @@ def create_order_from_cart(user_id: uuid.UUID, data: OrderCreateIn) -> OrderOut:
     )
 
     for item in cart_items:
-        adjust_variant_stock(variant=locked_variants[item.variant_id_id], delta=-item.quantity_item)
+        adjust_product_stock(product=locked_products[item.product_id_id], delta=-item.quantity_item)
 
     clear_cart(cart=cart)
 
@@ -129,13 +129,13 @@ def cancel_order_by_client(user_id: uuid.UUID, order_id: uuid.UUID, reason: str 
     if order.order_status != Order.StatusOrder.PENDING:
         raise OrderNotPayable("Só é possível cancelar pedidos com pagamento pendente.")
 
-    variant_ids = sorted({item.variant_id_id for item in order.items.all()})
-    locked_variants = {
-        v.variant_id: v
-        for v in ProductVariant.objects.select_for_update().filter(variant_id__in=variant_ids)
+    product_ids = sorted({item.product_id_id for item in order.items.all()})
+    locked_products = {
+        p.product_id: p
+        for p in Product.objects.select_for_update().filter(product_id__in=product_ids)
     }
     for item in order.items.all():
-        adjust_variant_stock(variant=locked_variants[item.variant_id_id], delta=item.order_item_quantity)
+        adjust_product_stock(product=locked_products[item.product_id_id], delta=item.order_item_quantity)
 
     canceled_order(order=order, reason=reason)
     return _order_out_for(user_id=user_id, order_id=order_id)

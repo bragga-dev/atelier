@@ -11,20 +11,15 @@ from pydantic import ValidationError as PydanticValidationError
 
 from luxury_fashion.apps.core.exceptions import (
     CategoryNotFound,
+    InsufficientStock,
     InvalidImageFile,
     ProductNameAlreadyExists,
     ProductNotFound,
     ShippingAlreadyExists,
-    VariantAlreadyExists,
 )
 from luxury_fashion.apps.core.permissions.auth_classes import AdminOnlyAuth
 from luxury_fashion.apps.core.schemas.deafult_schema import MessageOut, PageOut
 from luxury_fashion.apps.core.utils.pagination import PAGE_SIZE_DEFAULT, paginate_queryset
-from luxury_fashion.apps.products.schemas.product_enums_schema import (
-    ProductColorEnum,
-    ProductGenderEnum,
-    ProductSizeEnum,
-)
 from luxury_fashion.apps.products.schemas.product_schema import (
     ProductCreateFullIn,
     ProductCreateIn,
@@ -34,12 +29,14 @@ from luxury_fashion.apps.products.schemas.product_schema import (
 )
 from luxury_fashion.apps.products.services.product_service import (
     activate_product_for_admin,
+    adjust_product_stock_for_admin,
     create_product_for_amdin,
     create_product_full_for_admin,
     deactivate_product_for_admin,
     delete_product_for_admin,
     get_product_for_all,
     search_products_queryset,
+    set_product_stock_for_admin,
     update_product_for_admin,
 )
 
@@ -55,7 +52,7 @@ router = Router()
     summary="Lista/busca produtos na vitrine (paginado)",
     description=(
         "Endpoint público da vitrine. Sempre retorna apenas produtos ativos. "
-        "Suporta busca textual e filtros por categoria, gênero, tamanho, cor e estoque."
+        "Suporta busca textual e filtros por categoria e estoque."
     ),
 )
 @ratelimit(key="ip", rate="60/m", block=True)
@@ -65,19 +62,15 @@ def list_products_router(
     page_size: int = PAGE_SIZE_DEFAULT,
     search: Optional[str] = None,
     product_category_id: Optional[uuid.UUID] = None,
-    gender: Optional[ProductGenderEnum] = None,
-    size: Optional[ProductSizeEnum] = None,
-    color: Optional[ProductColorEnum] = None,
     in_stock_only: bool = False,
+    sort: Optional[str] = None,
 ):
     qs = search_products_queryset(
         search=search,
         product_category_id=product_category_id,
-        gender=gender.value if gender else None,
-        size=size.value if size else None,
-        color=color.value if color else None,
         in_stock_only=in_stock_only,
         active_only=True,
+        sort=sort,
     )
     return 200, paginate_queryset(qs, page, page_size, ProductListOut.from_orm)
 
@@ -85,21 +78,20 @@ def list_products_router(
     "/full",
     response={201: ProductOut, 404: MessageOut, 409: MessageOut, 400: MessageOut},
     auth=AdminOnlyAuth(),
-    summary="Cria produto + 1ª variante + frete + imagens em uma única chamada",
+    summary="Cria produto + frete + imagens em uma única chamada",
     description=(
         "Endpoint de conveniência para o formulário de cadastro completo. "
         "É multipart/form-data (por causa das imagens):\n\n"
-        "- `payload` (Form, string): JSON com `product_name`, `product_category_id`, "
-        "`variant` (tamanho/cor/gênero/preço/estoque/descrição) e `shipping` "
-        "(peso/dimensões da embalagem) — mesmo formato do schema `ProductCreateFullIn`.\n"
+        "- `payload` (Form, string): JSON com `product_name`, `category_ids`, "
+        "`price`, `stock`, `description` e `shipping` (peso/dimensões da "
+        "embalagem) — mesmo formato do schema `ProductCreateFullIn`.\n"
         "- `images` (File, 0..N): quantas imagens forem necessárias para a galeria do produto.\n"
         "- `cover_index` (Form, int, default 0): posição (na lista `images`) que vira a "
         "imagem de capa. Se nenhuma imagem for enviada, o produto fica sem capa.\n\n"
-        "Tudo é persistido atomicamente. As tabelas Product/ProductVariant/"
-        "ProductShipping/ProductImage continuam separadas — isso só evita que o "
-        "front precise fazer várias chamadas encadeadas. Para adicionar mais "
-        "variantes ou imagens depois, use POST /products/{product_id}/variants "
-        "e POST /products/{product_id}/images."
+        "Tudo é persistido atomicamente. As tabelas Product/ProductShipping/"
+        "ProductImage continuam separadas — isso só evita que o front precise "
+        "fazer várias chamadas encadeadas. Para adicionar mais imagens depois, "
+        "use POST /products/{product_id}/images."
     ),
 )
 @ratelimit(key="user", rate="30/h", block=True)
@@ -121,8 +113,6 @@ def create_product_full_router(
         return 404, {"detail": str(e)}
     except ProductNameAlreadyExists as e:
         return 409, {"detail": str(e)}
-    except VariantAlreadyExists as e:
-        return 409, {"detail": str(e)}
     except ShippingAlreadyExists as e:
         return 409, {"detail": str(e)}
     except InvalidImageFile as e:
@@ -136,7 +126,7 @@ def create_product_full_router(
     "/{product_id}",
     response={200: ProductOut, 404: MessageOut},
     auth=None,
-    summary="Detalhe de um produto (com variantes)",
+    summary="Detalhe de um produto",
 )
 @ratelimit(key="ip", rate="60/m", block=True)
 def detail_product_router(request, product_id: uuid.UUID):
@@ -161,18 +151,12 @@ def list_products_admin_router(
     page_size: int = PAGE_SIZE_DEFAULT,
     search: Optional[str] = None,
     product_category_id: Optional[uuid.UUID] = None,
-    gender: Optional[ProductGenderEnum] = None,
-    size: Optional[ProductSizeEnum] = None,
-    color: Optional[ProductColorEnum] = None,
     in_stock_only: bool = False,
     active_only: bool = False,
 ):
     qs = search_products_queryset(
         search=search,
         product_category_id=product_category_id,
-        gender=gender.value if gender else None,
-        size=size.value if size else None,
-        color=color.value if color else None,
         in_stock_only=in_stock_only,
         active_only=active_only,
     )
@@ -180,6 +164,23 @@ def list_products_admin_router(
 
 
 # ── Escrita (admin) ───────────────────────────────────────────────────────────
+
+@router.post(
+    "",
+    response={201: ProductOut, 404: MessageOut, 409: MessageOut, 400: MessageOut},
+    auth=AdminOnlyAuth(),
+    summary="Cria um novo produto",
+)
+@ratelimit(key="user", rate="30/h", block=True)
+def create_product_router(request, payload: ProductCreateIn):
+    try:
+        return 201, create_product_for_amdin(payload)
+    except CategoryNotFound as e:
+        return 404, {"detail": str(e)}
+    except ProductNameAlreadyExists as e:
+        return 409, {"detail": str(e)}
+    except DjangoValidationError as e:
+        return 400, {"detail": "; ".join(e.messages) if hasattr(e, "messages") else str(e)}
 
 
 @router.patch(
@@ -241,3 +242,19 @@ def deactivate_product_router(request, product_id: uuid.UUID):
         return 200, deactivate_product_for_admin(product_id)
     except ProductNotFound as e:
         return 404, {"detail": str(e)}
+
+
+@router.post(
+    "/{product_id}/stock",
+    response={200: ProductOut, 404: MessageOut, 409: MessageOut},
+    auth=AdminOnlyAuth(),
+    summary="Define o estoque absoluto de um produto",
+)
+@ratelimit(key="user", rate="60/h", block=True)
+def set_product_stock_router(request, product_id: uuid.UUID, stock: int):
+    try:
+        return 200, set_product_stock_for_admin(product_id, stock)
+    except ProductNotFound as e:
+        return 404, {"detail": str(e)}
+    except InsufficientStock as e:
+        return 409, {"detail": str(e)}

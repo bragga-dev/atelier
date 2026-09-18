@@ -9,7 +9,6 @@ from luxury_fashion.apps.products.models.product_model import Product
 from luxury_fashion.apps.products.schemas.produc_image_schema import ImageOut
 from luxury_fashion.apps.products.schemas.product_category_schema import ProductCategoryOut
 from luxury_fashion.apps.products.schemas.product_shipping_schema import ShippingCreateIn
-from luxury_fashion.apps.products.schemas.product_variant_schema import VariantCreateIn, VariantOut
 
 
 def _pick_cover_image(images: list) -> Optional["ImageOut"]:
@@ -22,7 +21,10 @@ def _pick_cover_image(images: list) -> Optional["ImageOut"]:
 
 class ProductCreateIn(Schema):
     product_name: str
-    product_category_id: uuid.UUID
+    category_ids: List[uuid.UUID]
+    price: Decimal
+    stock: int = 0
+    description: str = ""
 
     @field_validator("product_name")
     @classmethod
@@ -32,20 +34,36 @@ class ProductCreateIn(Schema):
             raise ValueError("Nome não pode ser vazio.")
         return v
 
+    @field_validator("category_ids")
+    @classmethod
+    def at_least_one_category(cls, v: List[uuid.UUID]) -> List[uuid.UUID]:
+        if not v:
+            raise ValueError("O produto precisa pertencer a pelo menos uma categoria.")
+        return v
+
+    @field_validator("price")
+    @classmethod
+    def price_not_negative(cls, v: Decimal) -> Decimal:
+        if v < 0:
+            raise ValueError("Preço não pode ser negativo.")
+        return v
+
 
 class ProductCreateFullIn(Schema):
     """
     Payload de conveniência para o formulário de cadastro completo: cria o
-    produto, sua primeira variante (tamanho/cor/gênero/preço/estoque/descrição)
-    e os dados de frete dessa variante (peso/dimensões) numa única chamada.
+    produto (com preço/estoque/descrição/categorias) e os dados de frete
+    (peso/dimensões) numa única chamada.
 
-    As tabelas continuam normalizadas (Product / ProductVariant /
-    ProductShipping) — este schema só agrupa a entrada para o front não
-    precisar orquestrar 3 requisições.
+    As tabelas continuam normalizadas (Product / ProductShipping) — este
+    schema só agrupa a entrada para o front não precisar orquestrar 2
+    requisições.
     """
     product_name: str
-    product_category_id: uuid.UUID
-    variant: VariantCreateIn
+    category_ids: List[uuid.UUID]
+    price: Decimal
+    stock: int = 0
+    description: str = ""
     shipping: ShippingCreateIn
 
     @field_validator("product_name")
@@ -56,57 +74,69 @@ class ProductCreateFullIn(Schema):
             raise ValueError("Nome não pode ser vazio.")
         return v
 
+    @field_validator("category_ids")
+    @classmethod
+    def at_least_one_category(cls, v: List[uuid.UUID]) -> List[uuid.UUID]:
+        if not v:
+            raise ValueError("O produto precisa pertencer a pelo menos uma categoria.")
+        return v
+
+    @field_validator("price")
+    @classmethod
+    def price_not_negative(cls, v: Decimal) -> Decimal:
+        if v < 0:
+            raise ValueError("Preço não pode ser negativo.")
+        return v
+
 
 class ProductUpdateIn(Schema):
     product_name: Optional[str] = None
-    product_category_id: Optional[uuid.UUID] = None
+    category_ids: Optional[List[uuid.UUID]] = None
+    price: Optional[Decimal] = None
+    stock: Optional[int] = None
+    description: Optional[str] = None
     is_active: Optional[bool] = None
 
 
 class ProductListOut(Schema):
     """
-    Versão da vitrine/listagem: inclui as variantes ativas (preço, tamanho,
-    cor, estoque etc.), a imagem de capa e um resumo agregado (faixa de
-    preço e disponibilidade) pra evitar o front varrer `variants` na mão.
-    Não carrega a galeria completa — para isso use o endpoint de detalhe
-    (`ProductOut`).
+    Versão da vitrine/listagem: inclui preço, estoque, categorias e a
+    imagem de capa. Não carrega a galeria completa — para isso use o
+    endpoint de detalhe (`ProductOut`).
     """
     product_id: uuid.UUID
     product_name: str
-    category: ProductCategoryOut
+    categories: List[ProductCategoryOut]
     is_active: bool
-    variants: List[VariantOut]
+    price: Decimal
+    stock: int
+    description: str
+    in_stock: bool
     cover_image: Optional[ImageOut] = None
-    min_price: Optional[Decimal] = None
-    max_price: Optional[Decimal] = None
-    in_stock: bool = False
 
     @classmethod
     def from_orm(cls, product: Product) -> "ProductListOut":
-        # `product.variants`/`product.images` já vêm prefetchadas
-        # (variants filtradas por is_active=True, images ordenadas com a
-        # capa primeiro) pelo selector — usar `.all()` aproveita o cache
-        # do prefetch em vez de disparar uma query nova por produto.
+        # `product.categories`/`product.images` já vêm prefetchadas pelo
+        # selector — usar `.all()` aproveita o cache do prefetch em vez de
+        # disparar uma query nova por produto.
         images = list(product.images.all())
-        variants = [VariantOut.from_orm(v) for v in product.variants.all()]
-        prices = [v.price for v in variants]
+        categories = [ProductCategoryOut.from_orm(c) for c in product.categories.all()]
 
         return cls(
             product_id=product.product_id,
             product_name=product.product_name,
-            category=ProductCategoryOut.from_orm(product.product_category_id),
+            categories=categories,
             is_active=product.is_active,
-            variants=variants,
+            price=product.price,
+            stock=product.stock,
+            description=product.description,
+            in_stock=product.in_stock,
             cover_image=_pick_cover_image(images),
-            min_price=min(prices) if prices else None,
-            max_price=max(prices) if prices else None,
-            in_stock=any(v.in_stock for v in variants),
         )
 
 
 class ProductOut(ProductListOut):
-    """Versão completa — usada na página de detalhe (com variantes e imagens)."""
-    variants: List[VariantOut]
+    """Versão completa — usada na página de detalhe (com galeria de imagens)."""
     images: List[ImageOut] = []
     created_at: str
     updated_at: str
@@ -114,20 +144,19 @@ class ProductOut(ProductListOut):
     @classmethod
     def from_orm(cls, product: Product) -> "ProductOut":
         images = list(product.images.all())
-        variants = [VariantOut.from_orm(v) for v in product.variants.filter(is_active=True)]
-        prices = [v.price for v in variants]
+        categories = [ProductCategoryOut.from_orm(c) for c in product.categories.all()]
 
         return cls(
             product_id=product.product_id,
             product_name=product.product_name,
-            category=ProductCategoryOut.from_orm(product.product_category_id),
+            categories=categories,
             is_active=product.is_active,
-            variants=variants,
+            price=product.price,
+            stock=product.stock,
+            description=product.description,
+            in_stock=product.in_stock,
             images=[ImageOut.from_orm(img) for img in images],
             cover_image=_pick_cover_image(images),
-            min_price=min(prices) if prices else None,
-            max_price=max(prices) if prices else None,
-            in_stock=any(v.in_stock for v in variants),
             created_at=product.created_at.isoformat(),
             updated_at=product.updated_at.isoformat(),
         )

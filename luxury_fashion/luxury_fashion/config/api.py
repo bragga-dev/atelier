@@ -18,7 +18,7 @@ from luxury_fashion.apps.accounts.api.address import router as address_router
 from luxury_fashion.apps.reviews.api.reviews import router as reviews_router
 from luxury_fashion.apps.website.api.campaign import router as campaign_router
 from luxury_fashion.apps.website.api.contact import router as contact_router
-
+from luxury_fashion.apps.products.api.image import router as product_image_router
 
 from django_ratelimit.exceptions import Ratelimited
 import logging
@@ -36,7 +36,7 @@ from luxury_fashion.apps.core.permissions.auth_classes import (
 api = NinjaAPI(
     title="ÉLUXO MODAS API",
     version="1.0.0",
-    description="E-commerce de moda masculina e feminina.",
+    description="E-commerce de peças artesanais.",
     auth=[JWTAuth(), AdminOnlyAuth(), ClientOnlyAuth(), VerifiedUserAuth(), ActiveUserAuth()],
     urls_namespace="api",
     docs=Swagger(settings={"persistAuthorization": True}),
@@ -54,12 +54,12 @@ api.add_router("/shipping/", frenet_router, tags=["Shipping"])
 api.add_router("/cart/", cart_router, tags=["Cart"])
 api.add_router("/orders/", orders_router, tags=["Orders"])
 api.add_router("/", payments_router, tags=["Payments"])
-api.add_router("/webhooks/asaas/", asaas_webhook_router, tags=["Webhooks"])
+api.add_router("/payments", asaas_webhook_router, tags=["Webhooks"])
 api.add_router("/address/", address_router, tags=["Address"])
 api.add_router("/reviews/", reviews_router, tags=["Reviews"])
 api.add_router("/campaigns/", campaign_router, tags=["Campaigns"])
 api.add_router("/contact/", contact_router, tags=["Contact"])
-
+api.add_router("/products/", product_image_router, tags=["Imagens de Produto"])
 # ── Handlers de erro globais ──────────────────────────────────────────────────
 
 @api.exception_handler(ValidationError)
