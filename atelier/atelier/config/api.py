@@ -34,7 +34,7 @@ from atelier.apps.core.permissions.auth_classes import (
 )
 
 api = NinjaAPI(
-    title="ÉLUXO MODAS API",
+    title="ATELIER  API",
     version="1.0.0",
     description="E-commerce de peças artesanais.",
     auth=[JWTAuth(), AdminOnlyAuth(), ClientOnlyAuth(), VerifiedUserAuth(), ActiveUserAuth()],
