@@ -1,0 +1,89 @@
+from django.utils.translation import gettext_lazy as _
+
+
+class OrderNotFound(Exception):
+    def __init__(self, message=None):
+        self.message = message or _("Pedido não encontrado.")
+        super().__init__(self.message)
+
+
+class InvalidAvailabilityRequest(Exception):
+    def __init__(self, message=None):
+        self.message = message or _("Requisição de disponibilidade inválida.")
+        super().__init__(self.message)
+
+
+class WorkingHoursNotFound(Exception):
+    def __init__(self, message=None):
+        self.message = message or _("Horário de trabalho não encontrado.")
+        super().__init__(self.message)
+
+
+class TimeOffConflict(Exception):
+    def __init__(self, message=None):
+        self.message = message or _("Horário de pausa não estão alinhados.")
+        super().__init__(self.message)
+
+class TimeOffNotFound(Exception):
+    def __init__(self, message=None):
+        self.message = message or _("Horário de pausa não encontrado.")
+        super().__init__(self.message)
+
+class InvalidTimeOffRequest(Exception):
+    def __init__(self, message=None):
+        self.message = message or _("Requisição de folga / pausa inválida.")
+        super().__init__(self.message)
+
+
+class SchedulingNotFound(Exception):
+    def __init__(self, message=None):
+        self.message = message or _("Agendamento não encontrado.")
+        super().__init__(self.message)
+
+class InvalidSchedulingRequest(Exception):
+    def __init__(self, message=None):
+        self.message = message or _("Requisição de agendamento inválida.")
+        super().__init__(self.message)
+
+
+class SchedulingCannotBeModified(Exception):
+    def __init__(self, message=None):
+        self.message = message or _("Este agendamento não pode mais ser alterado.")
+        super().__init__(self.message)
+
+
+class SchedulingCannotBeCanceled(Exception):
+    def __init__(self, message=None):
+        self.message = message or _("Este agendamento não pode ser cancelado.")
+        super().__init__(self.message)
+
+
+class InvalidOrderStatusTransition(Exception):
+    def __init__(self, message=None):
+        self.message = message or _("Transição de status inválida para este pedido.")
+        super().__init__(self.message)
+
+
+class AverageRatingNotFound(Exception):
+    def __init__(self, message=None):
+        self.message = message or _("Avaliação não encontrada.")
+        super().__init__(self.message)
+
+
+class AverageRatingAlreadyExists(Exception):
+    def __init__(self, message=None):
+        self.message = message or _("Este item já foi avaliado.")
+        super().__init__(self.message)
+
+
+class OrderItemNotReviewable(Exception):
+    def __init__(self, message=None):
+        self.message = message or _("Só é possível avaliar itens de pedidos concluídos.")
+        super().__init__(self.message)
+
+class SchedulingCannotBeConfirmed(Exception):
+    def __init__(self, message=None):
+        self.message = message or _(
+            "Este agendamento não pode ser confirmado, pois não está com o status 'Criado'."
+        )
+        super().__init__(self.message)
