@@ -1,0 +1,38 @@
+"""
+Order Selectors — queries de leitura. Nenhuma escrita acontece aqui.
+"""
+import uuid
+from typing import Optional
+
+from django.db.models import Prefetch, QuerySet
+
+from atelier.apps.payments.models.order_item_model import OrderItem
+from atelier.apps.payments.models.order_model import Order
+
+
+def _with_items(qs: QuerySet[Order]) -> QuerySet[Order]:
+    items_qs = OrderItem.objects.select_related("product_id").prefetch_related("product_id__categories", "product_id__images")
+    return qs.select_related("shipping_address").prefetch_related(Prefetch("items", queryset=items_qs))
+
+
+def get_order_by_id(order_id: uuid.UUID) -> Optional[Order]:
+    return _with_items(Order.objects).filter(order_id=order_id).first()
+
+
+def get_order_by_id_and_user(order_id: uuid.UUID, user_id: uuid.UUID) -> Optional[Order]:
+    return _with_items(Order.objects).filter(order_id=order_id, user_id=user_id).first()
+
+
+def get_orders_by_user(user_id: uuid.UUID) -> QuerySet[Order]:
+    return _with_items(Order.objects).filter(user_id=user_id).order_by("-created_at")
+
+def get_order_item_by_product(product_id: uuid.UUID):
+    return OrderItem.objects.filter(product_id=product_id).values_list("order_item_id", flat=True)
+
+
+def get_order_item_by_id(order_item_id: uuid.UUID) -> Optional[OrderItem]:
+    return (
+        OrderItem.objects.select_related("order_id", "product_id")
+        .filter(order_item_id=order_item_id)
+        .first()
+    )
