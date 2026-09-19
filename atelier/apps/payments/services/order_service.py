@@ -100,6 +100,10 @@ def create_order_from_cart(user_id: uuid.UUID, data: OrderCreateIn) -> OrderOut:
 
     clear_cart(cart=cart)
 
+    from atelier.apps.payments.tasks.send_order_received import send_order_received
+
+    transaction.on_commit(lambda: send_order_received.delay(user_id, order.order_id))
+
     return _order_out_for(user_id=user_id, order_id=order.order_id)
 
 
@@ -138,4 +142,9 @@ def cancel_order_by_client(user_id: uuid.UUID, order_id: uuid.UUID, reason: str 
         adjust_product_stock(product=locked_products[item.product_id_id], delta=item.order_item_quantity)
 
     canceled_order(order=order, reason=reason)
+
+    from atelier.apps.payments.tasks.send_order_cancelled import send_order_cancelled
+
+    transaction.on_commit(lambda: send_order_cancelled.delay(order_id))
+
     return _order_out_for(user_id=user_id, order_id=order_id)

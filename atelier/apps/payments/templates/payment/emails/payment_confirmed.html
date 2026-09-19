@@ -1,0 +1,73 @@
+<!-- payment/emails/payment_confirmed.html -->
+
+{% extends "core/emails/base.html" %}
+
+{% block title %}Pagamento confirmado — ÉLUXO MODAS{% endblock %}
+
+{% block preheader %}Pagamento confirmado! Seu pedido {{ order_code }} já está sendo preparado.{% endblock %}
+
+{% block content %}
+
+    <span class="section-label">Pagamento confirmado</span>
+    <h1 class="heading">Pagamento confirmado!</h1>
+
+    <p class="greeting">
+        Olá, <strong>{{ client_name }}</strong>!
+    </p>
+
+    <p class="body-text">
+        Recebemos a confirmação do pagamento do seu pedido
+        <strong>{{ order_code }}</strong>. Já vamos começar a preparar suas
+        peças com carinho.
+    </p>
+
+    <div style="text-align: center; margin: 4px 0 24px;">
+        <span class="highlight-badge">{{ order_status }}</span>
+    </div>
+
+    <div class="info-box plain">
+        <p class="info-box-title">Itens do pedido</p>
+
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+            {% for item in order_items %}
+            <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #ead9c0; font-family: 'Jost', Arial, Helvetica, sans-serif; font-size: 14px; color: #4a3b2c;">
+                    {{ item.quantity }}x {{ item.name }}
+                </td>
+                <td align="right" style="padding: 8px 0; border-bottom: 1px solid #ead9c0; font-family: 'Jost', Arial, Helvetica, sans-serif; font-size: 14px; color: #4a3b2c; font-weight: 600; white-space: nowrap;">
+                    R$ {{ item.subtotal|floatformat:2 }}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <div class="payment-row">
+            <span class="payment-label">Total pago</span><br>
+            <span class="payment-value amount">R$ {{ order_total|floatformat:2 }}</span>
+        </div>
+    </div>
+
+    <hr class="divider" style="border: none; border-top: 1px solid #e8e6e1; margin: 24px 0;">
+
+    <div class="cta-wrap">
+        <!--[if mso]>
+        <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ client_orders_url }}" style="height:50px;v-text-anchor:middle;width:220px;" arcsize="15%" stroke="f" fillcolor="#a85a76">
+            <w:anchorlock/>
+            <center style="color:#fffdfb;font-family:Arial,sans-serif;font-size:13px;font-weight:bold;letter-spacing:1px;">VER MEU PEDIDO</center>
+        </v:roundrect>
+        <![endif]-->
+        <!--[if !mso]><!-->
+        <a href="{{ client_orders_url }}" class="cta-btn">
+            Ver meu pedido
+        </a>
+        <!--<![endif]-->
+        <a href="{{ store_url }}" class="cta-btn-secondary">
+            Voltar à loja
+        </a>
+    </div>
+
+    <div style="text-align: center; margin-top: 24px;">
+        <p class="body-text" style="margin: 0;">Muito obrigado pela confiança!</p>
+    </div>
+
+{% endblock %}

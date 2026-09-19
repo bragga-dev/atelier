@@ -6,6 +6,7 @@ from django.conf import settings
 
 
 from atelier.apps.core.permissions.roles import is_client
+from atelier.apps.payments.models.order_model import Order
 from atelier.apps.payments.models.payment_model import Payment
 from atelier.apps.payments.models.asaas_customer_model import AsaasCustomer
 
@@ -25,6 +26,29 @@ def store_url() -> str:
     """Link para a página da loja."""
     return build_frontend_url(_STORE_PATH)
 
+
+def build_order_summary_block(order: Order) -> dict:
+    """
+    Resumo do pedido (itens + valores) — usado nos e-mails de ciclo de vida
+    do pedido (recebido, pagamento confirmado, cancelado, estornado).
+    Espera que `order.items` já venha prefetchado (ver `get_order_by_id`).
+    """
+    items = [
+        {
+            "name": item.product_id.product_name,
+            "quantity": item.order_item_quantity,
+            "unit_price": item.order_item_price,
+            "subtotal": item.subtotal(),
+        }
+        for item in order.items.all()
+    ]
+    return {
+        "order_code": order.code,
+        "order_items": items,
+        "order_subtotal": order.subtotal,
+        "order_shipping_total": order.order_shipping_total,
+        "order_total": order.total_geral,
+    }
 
 
 def build_payment_block(payment: Payment, customer: AsaasCustomer) -> dict:

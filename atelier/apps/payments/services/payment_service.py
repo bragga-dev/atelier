@@ -212,5 +212,14 @@ def handle_asaas_webhook(token: str, event: str, payment_data: dict) -> None:
     order = payment.order_id
     if status in _PAID_STATUSES and order.order_status != Order.StatusOrder.COMPLETED:
         completed_order(order=order)
+
+        from atelier.apps.payments.tasks.send_payment_confirmed import send_payment_confirmed
+
+        send_payment_confirmed.delay(order.order_id)
+
     elif status in _REFUND_STATUSES and order.order_status != Order.StatusOrder.REFUNDED:
         refunded_order(order=order)
+
+        from atelier.apps.payments.tasks.send_payment_refunded import send_payment_refunded
+
+        send_payment_refunded.delay(order.order_id)
