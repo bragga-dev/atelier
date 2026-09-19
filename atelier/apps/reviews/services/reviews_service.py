@@ -127,6 +127,11 @@ def create_review_for_client(user_id: UUID, data: ReviewsCreateIn) -> ReviewsPri
     )
 
     _refresh_aggregates(reviews)
+
+    from atelier.apps.notifications.services.notification_service import notify_new_review
+
+    notify_new_review(reviews.reviews_id)
+
     return ReviewsPrivateOut.from_orm(reviews)
 
 

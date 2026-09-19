@@ -214,12 +214,16 @@ def handle_asaas_webhook(token: str, event: str, payment_data: dict) -> None:
         completed_order(order=order)
 
         from atelier.apps.payments.tasks.send_payment_confirmed import send_payment_confirmed
+        from atelier.apps.notifications.services.notification_service import notify_payment_confirmed
 
         send_payment_confirmed.delay(order.order_id)
+        notify_payment_confirmed(order.order_id)
 
     elif status in _REFUND_STATUSES and order.order_status != Order.StatusOrder.REFUNDED:
         refunded_order(order=order)
 
         from atelier.apps.payments.tasks.send_payment_refunded import send_payment_refunded
+        from atelier.apps.notifications.services.notification_service import notify_payment_refunded
 
         send_payment_refunded.delay(order.order_id)
+        notify_payment_refunded(order.order_id)

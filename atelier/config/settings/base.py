@@ -73,6 +73,7 @@ LOCAL_APPS = [
     "atelier.apps.cart",
     "atelier.apps.reviews",
     "atelier.apps.website",
+    "atelier.apps.notifications",
    
 ]
 

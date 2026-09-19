@@ -30,6 +30,8 @@ from atelier.apps.payments.selectors.order_selector import (
 from atelier.apps.products.models.product_model import Product
 from atelier.apps.products.repositories.product_repository import adjust_product_stock
 
+LOW_STOCK_THRESHOLD = 5
+
 
 def _validate_shipping_address(user_id: uuid.UUID, shipping_address_id: uuid.UUID):
     client = get_client_by_user_id(user_id=user_id)
@@ -96,13 +98,22 @@ def create_order_from_cart(user_id: uuid.UUID, data: OrderCreateIn) -> OrderOut:
     )
 
     for item in cart_items:
-        adjust_product_stock(product=locked_products[item.product_id_id], delta=-item.quantity_item)
+        product = locked_products[item.product_id_id]
+        stock_before = product.stock
+        adjust_product_stock(product=product, delta=-item.quantity_item)
+
+        if stock_before > LOW_STOCK_THRESHOLD >= product.stock:
+            from atelier.apps.notifications.services.notification_service import notify_low_stock
+
+            transaction.on_commit(lambda pid=product.product_id: notify_low_stock(pid))
 
     clear_cart(cart=cart)
 
     from atelier.apps.payments.tasks.send_order_received import send_order_received
+    from atelier.apps.notifications.services.notification_service import notify_order_received
 
     transaction.on_commit(lambda: send_order_received.delay(user_id, order.order_id))
+    transaction.on_commit(lambda: notify_order_received(order.order_id))
 
     return _order_out_for(user_id=user_id, order_id=order.order_id)
 
@@ -144,7 +155,9 @@ def cancel_order_by_client(user_id: uuid.UUID, order_id: uuid.UUID, reason: str 
     canceled_order(order=order, reason=reason)
 
     from atelier.apps.payments.tasks.send_order_cancelled import send_order_cancelled
+    from atelier.apps.notifications.services.notification_service import notify_order_cancelled
 
     transaction.on_commit(lambda: send_order_cancelled.delay(order_id))
+    transaction.on_commit(lambda: notify_order_cancelled(order_id))
 
     return _order_out_for(user_id=user_id, order_id=order_id)

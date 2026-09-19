@@ -30,6 +30,7 @@ from atelier.apps.core.exceptions.products_exception import (
     ShippingAlreadyExists,
 )
 from atelier.apps.core.exceptions.campaign_exception import CampaignNotFound, CampaignTitleAlreadyExists, CampaignImageNotFound
+from atelier.apps.core.exceptions.notification_exception import NotificationNotFound
 
 __all__ = [
     
@@ -75,5 +76,7 @@ __all__ = [
     "CampaignNotFound",
     "CampaignTitleAlreadyExists",
     "CampaignImageNotFound",
+
+    "NotificationNotFound",
 
 ]
