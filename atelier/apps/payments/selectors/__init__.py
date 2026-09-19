@@ -7,6 +7,7 @@ from atelier.apps.payments.selectors.order_selector import (
     get_order_item_by_id,
     get_order_item_by_product,
     get_orders_by_user,
+    get_orders_for_export,
 )
 from atelier.apps.payments.selectors.payment_selector import (
     get_payment_by_id,
@@ -23,6 +24,7 @@ __all__ = [
     "get_order_item_by_id",
     "get_order_item_by_product",
     "get_orders_by_user",
+    "get_orders_for_export",
     "get_payment_by_id",
     "get_payment_by_id_and_user",
     "get_payment_by_asaas_id",

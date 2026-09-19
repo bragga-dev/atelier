@@ -9,6 +9,12 @@ from atelier.apps.payments.schemas.asaas_schema import (
 from atelier.apps.payments.schemas.order_item_schema import (
     OrderItemOut,
 )
+from atelier.apps.payments.schemas.dashboard_schema import (
+    DashboardSummaryOut,
+    LowStockProductOut,
+    TopCategoryOut,
+    TopProductOut,
+)
 from atelier.apps.payments.schemas.order_schema import (
     OrderCreateIn,
     OrderOut,
@@ -35,6 +41,11 @@ __all__ = [
     "AsaasWebhookPayloadSchema",
 
     "OrderItemOut",
+
+    "DashboardSummaryOut",
+    "LowStockProductOut",
+    "TopCategoryOut",
+    "TopProductOut",
 
     "OrderCreateIn",
     "OrderOut",

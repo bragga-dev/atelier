@@ -13,6 +13,7 @@ from atelier.apps.products.api.frenet import router as frenet_router
 from atelier.apps.cart.api.cart import router as cart_router
 from atelier.apps.payments.api.orders import router as orders_router
 from atelier.apps.payments.api.payments import router as payments_router
+from atelier.apps.payments.api.dashboard import router as dashboard_router
 from atelier.apps.payments.api.webhook import router as asaas_webhook_router
 from atelier.apps.accounts.api.address import router as address_router
 from atelier.apps.reviews.api.reviews import router as reviews_router
@@ -53,6 +54,7 @@ api.add_router("/products/", product_router, tags=["Produtos"])
 api.add_router("/shipping/", frenet_router, tags=["Shipping"])
 api.add_router("/cart/", cart_router, tags=["Cart"])
 api.add_router("/orders/", orders_router, tags=["Orders"])
+api.add_router("/admin/dashboard/", dashboard_router, tags=["Dashboard"])
 api.add_router("/", payments_router, tags=["Payments"])
 api.add_router("/payments", asaas_webhook_router, tags=["Webhooks"])
 api.add_router("/address/", address_router, tags=["Address"])

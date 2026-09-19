@@ -1,9 +1,17 @@
-
 from atelier.apps.payments.services.order_service import (
     cancel_order_by_client,
     create_order_from_cart,
     get_order_for_client,
     list_orders_for_client,
+)
+
+from atelier.apps.payments.services.dashboard_service import (
+    get_dashboard_summary,
+)
+
+from atelier.apps.payments.services.order_export_service import (
+    render_orders_csv,
+    render_orders_xlsx,
 )
 
 from atelier.apps.payments.services.payment_service import (
@@ -27,6 +35,11 @@ __all__ = [
     "create_order_from_cart",
     "get_order_for_client",
     "list_orders_for_client",
+
+    "get_dashboard_summary",
+
+    "render_orders_csv",
+    "render_orders_xlsx",
     
     
     "create_payment_for_order",

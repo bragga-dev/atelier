@@ -36,3 +36,24 @@ def get_order_item_by_id(order_item_id: uuid.UUID) -> Optional[OrderItem]:
         .filter(order_item_id=order_item_id)
         .first()
     )
+
+def get_orders_for_export(
+    start_date=None,
+    end_date=None,
+    statuses=None,
+):
+    """
+    Queryset "achatável" em planilha: já traz cliente, endereço e itens
+    pré-carregados pra exportação não disparar N+1 por pedido.
+    """
+    qs = (
+        Order.objects.select_related("user_id", "user_id__client_profile", "shipping_address")
+        .prefetch_related("items__product_id")
+    )
+    if statuses:
+        qs = qs.filter(order_status__in=list(statuses))
+    if start_date:
+        qs = qs.filter(created_at__date__gte=start_date)
+    if end_date:
+        qs = qs.filter(created_at__date__lte=end_date)
+    return qs.order_by("created_at")
