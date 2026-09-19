@@ -21,6 +21,7 @@ from typing import Optional
 from uuid import UUID
 
 from django.db import models
+from django.utils import timezone
 
 from atelier.apps.accounts.models.user_model import User
 from atelier.apps.accounts.selectors.user_selector import get_user_by_id
@@ -35,6 +36,7 @@ from atelier.apps.notifications.repositories.notification_repository import (
 from atelier.apps.notifications.selectors.notification_selector import (
     filter_notifications,
     get_admin_recipients,
+    get_content_type_for_target,
     get_notification_by_id,
     get_notifications_for_user,
     get_unread_count,
@@ -62,6 +64,7 @@ def notify(
     actor: Optional[User] = None,
     target: Optional[models.Model] = None,
 ) -> Notification:
+    content_type = get_content_type_for_target(target) if target else None
     return _create_notification(
         recipient=recipient,
         notification_type=notification_type,
@@ -69,7 +72,8 @@ def notify(
         body=body,
         action_url=action_url,
         actor=actor,
-        target=target,
+        content_type=content_type,
+        object_id=target.pk if target else None,
     )
 
 
@@ -265,14 +269,17 @@ def mark_notification_as_read(*, user_id: UUID, notification_id: UUID) -> Notifi
         raise NotificationNotFound()
     if notification.recipient_id != user.user_id:
         raise PermissionDenied("Você não pode alterar notificações de outro usuário.")
-    return _mark_as_read(notification)
+    if not notification.is_read:
+        notification = _mark_as_read(notification, read_at=timezone.now())
+    return notification
 
 
 def mark_all_notifications_as_read(*, user_id: UUID) -> int:
     user = get_user_by_id(user_id=user_id)
     if user is None:
         raise UserNotFound()
-    return _mark_all_as_read(user.user_id)
+    unread = get_notifications_for_user(recipient_id=user.user_id, unread_only=True)
+    return _mark_all_as_read(unread, read_at=timezone.now())
 
 
 def delete_notification(*, user_id: UUID, notification_id: UUID) -> None:

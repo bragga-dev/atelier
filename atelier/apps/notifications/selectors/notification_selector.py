@@ -1,6 +1,8 @@
 from typing import Optional
 from uuid import UUID
 
+from django.contrib.contenttypes.models import ContentType
+from django.db import models
 from django.db.models import Q, QuerySet
 
 from atelier.apps.accounts.models.user_model import User
@@ -37,3 +39,8 @@ def filter_notifications(user_id: Optional[UUID] = None, read: Optional[bool] = 
 def get_admin_recipients() -> QuerySet[User]:
     """Todos os usuários com poder de admin (role ADMIN ou superuser), ativos — usado para notificações in-app dirigidas ao backoffice (ex: nova avaliação pendente, estoque baixo)."""
     return User.objects.filter(Q(role=User.UserRole.ADMIN) | Q(is_superuser=True), is_active=True)
+
+
+def get_content_type_for_target(target: models.Model) -> ContentType:
+    """ContentType do model de origem da notificação (Order, Reviews, Product...)."""
+    return ContentType.objects.get_for_model(target)
