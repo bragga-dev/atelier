@@ -9,7 +9,7 @@ from django.db import transaction
 
 from atelier.apps.accounts.selectors.address_selector import get_address_by_id
 from atelier.apps.accounts.selectors.client_selector import get_client_by_user_id
-from atelier.apps.cart.repositories.cart_item_repository import clear_cart
+from atelier.apps.cart.repositories.cart_item_repository import delete_items
 from atelier.apps.cart.selectors.cart_item_selector import get_items_by_cart
 from atelier.apps.cart.selectors.cart_selector import get_cart_by_user_id
 from atelier.apps.core.exceptions import EmptyCart, OrderNotFound, OrderNotPayable, UserNotFound
@@ -28,7 +28,7 @@ from atelier.apps.payments.selectors.order_selector import (
     get_orders_by_user,
 )
 from atelier.apps.products.models.product_model import Product
-from atelier.apps.products.repositories.product_repository import adjust_product_stock
+from atelier.apps.products.repositories.product_repository import set_product_stock
 
 LOW_STOCK_THRESHOLD = 5
 
@@ -100,14 +100,15 @@ def create_order_from_cart(user_id: uuid.UUID, data: OrderCreateIn) -> OrderOut:
     for item in cart_items:
         product = locked_products[item.product_id_id]
         stock_before = product.stock
-        adjust_product_stock(product=product, delta=-item.quantity_item)
+        set_product_stock(product=product, stock=product.stock - item.quantity_item)
 
         if stock_before > LOW_STOCK_THRESHOLD >= product.stock:
             from atelier.apps.notifications.services.notification_service import notify_low_stock
 
             transaction.on_commit(lambda pid=product.product_id: notify_low_stock(pid))
 
-    clear_cart(cart=cart)
+    delete_items(get_items_by_cart(cart_id=cart.cart_id))
+    cart.update_totals()
 
     from atelier.apps.payments.tasks.send_order_received import send_order_received
     from atelier.apps.notifications.services.notification_service import notify_order_received
@@ -150,7 +151,8 @@ def cancel_order_by_client(user_id: uuid.UUID, order_id: uuid.UUID, reason: str 
         for p in Product.objects.select_for_update().filter(product_id__in=product_ids)
     }
     for item in order.items.all():
-        adjust_product_stock(product=locked_products[item.product_id_id], delta=item.order_item_quantity)
+        product = locked_products[item.product_id_id]
+        set_product_stock(product=product, stock=product.stock + item.order_item_quantity)
 
     canceled_order(order=order, reason=reason)
 

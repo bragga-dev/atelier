@@ -7,7 +7,6 @@ import uuid
 
 from atelier.apps.cart.repositories.cart_item_repository import (
     create_item,
-    increment_item_quantity,
     remove_item,
     update_item_quantity,
 )
@@ -50,10 +49,11 @@ def add_item_to_cart(user_id: uuid.UUID, data: CartItemCreateIn) -> CartOut:
         raise InsufficientStock()
 
     if existing:
-        increment_item_quantity(item=existing, quantity=data.quantity_item)
+        update_item_quantity(item=existing, quantity=new_quantity)
     else:
         create_item(cart=cart, product=product, quantity=data.quantity_item)
 
+    cart.update_totals()
     return _cart_out_for(user_id=user_id)
 
 
@@ -65,6 +65,7 @@ def update_cart_item_quantity(user_id: uuid.UUID, cart_item_id: uuid.UUID, quant
         raise InsufficientStock()
 
     update_item_quantity(item=item, quantity=quantity)
+    cart.update_totals()
     return _cart_out_for(user_id=user_id)
 
 
@@ -73,4 +74,5 @@ def remove_item_from_cart(user_id: uuid.UUID, cart_item_id: uuid.UUID) -> CartOu
     item = _get_cart_item_or_raise(cart_item_id=cart_item_id, cart_id=cart.cart_id)
 
     remove_item(item)
+    cart.update_totals()
     return _cart_out_for(user_id=user_id)

@@ -68,13 +68,6 @@ def deactivate_product(product: Product) -> Product:
     return product
 
 
-def adjust_product_stock(product: Product, delta: int) -> Product:
-    product.stock = product.stock + delta
-    product.full_clean(exclude=["categories"])
-    product.save(update_fields=["stock"])
-    return product
-
-
 def set_product_stock(product: Product, stock: int) -> Product:
     product.stock = stock
     product.full_clean(exclude=["categories"])

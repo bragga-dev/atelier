@@ -7,6 +7,7 @@ prontos para a camada de API.
 import uuid
 
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from ninja import UploadedFile
 
 from atelier.apps.core.exceptions.campaign_exception import (
@@ -14,6 +15,7 @@ from atelier.apps.core.exceptions.campaign_exception import (
     CampaignNotFound,
 )
 from atelier.apps.core.exceptions.media import InvalidImageFile
+from atelier.apps.core.tasks.media import delete_old_media_file
 from atelier.apps.core.validators.image_validator import validate_image_file
 
 from atelier.apps.website.models.campaignImage_model import CampaignImage
@@ -23,6 +25,7 @@ from atelier.apps.website.repositories.campaign_image_repository import (
     delete_campaign_image,
     reorder_campaign_image,
     set_cover_campaign_image,
+    unset_cover_campaign_image,
     update_campaign_image,
 )
 
@@ -33,6 +36,7 @@ from atelier.apps.website.schemas.campaign_image_schema import (
 
 from atelier.apps.website.selectors.campaign_image_selector import (
     get_campaign_image_by_id,
+    get_cover_image as get_campaign_cover_image,
     get_images_by_campaign,
 )
 
@@ -51,6 +55,24 @@ def _get_campaign_image_or_raise(
         raise CampaignImageNotFound()
 
     return campaign_image
+
+
+@transaction.atomic
+def _promote_campaign_image_to_cover(
+    campaign_image: CampaignImage,
+) -> CampaignImage:
+
+    # Regra de negócio:
+    # só existe uma capa por campanha; a capa atual
+    # é desmarcada antes de promover a nova.
+    current_cover = get_campaign_cover_image(
+        campaign_image.campaign_id_id,
+    )
+
+    if current_cover is not None and current_cover.pk != campaign_image.pk:
+        unset_cover_campaign_image(current_cover)
+
+    return set_cover_campaign_image(campaign_image)
 
 
 # ── Leitura ──────────────────────────────────────────────────────────────
@@ -115,7 +137,7 @@ def upload_campaign_image_for_admin(
     )
 
     if set_cover:
-        created = set_cover_campaign_image(created)
+        created = _promote_campaign_image_to_cover(created)
 
     return CampaignImageOut.from_orm(created)
 
@@ -145,7 +167,12 @@ def delete_campaign_image_for_admin(
         campaign_image_id,
     )
 
+    old_name = campaign_image.image.name if campaign_image.image else None
+
     delete_campaign_image(campaign_image)
+
+    if old_name:
+        delete_old_media_file.delay(old_name)
 
 
 def set_cover_campaign_image_for_admin(
@@ -159,7 +186,7 @@ def set_cover_campaign_image_for_admin(
     # Regra de negócio:
     # se já é a capa, não há nada a fazer.
     if not campaign_image.is_cover:
-        campaign_image = set_cover_campaign_image(
+        campaign_image = _promote_campaign_image_to_cover(
             campaign_image,
         )
 

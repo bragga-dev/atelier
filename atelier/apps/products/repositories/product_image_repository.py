@@ -4,7 +4,6 @@ ProductImage Repository — persistência de ProductImage.
 from django.core.files import File
 from django.db import transaction
 
-from atelier.apps.core.tasks.media import delete_old_media_file
 from atelier.apps.products.models.product_image_model import ProductImage
 from atelier.apps.products.models.product_model import Product
 
@@ -21,8 +20,6 @@ def create_image(
         is_cover=is_cover,
         display_order=display_order,
     )
-    if is_cover:
-        ProductImage.objects.filter(product_id=product_id, is_cover=True).update(is_cover=False)
     image.full_clean()
     image.save()
     return image
@@ -30,27 +27,28 @@ def create_image(
 
 def update_image(image: ProductImage, **fields) -> ProductImage:
     for attr, value in fields.items():
-        if value is not None:
-            setattr(image, attr, value)
+        setattr(image, attr, value)
     image.full_clean()
     image.save()
     return image
 
 
 def delete_image(image: ProductImage) -> None:
-    old_name = image.product_image.name if image.product_image else None
     image.delete()
-    if old_name:
-        delete_old_media_file.delay(old_name)
 
 
 @transaction.atomic
 def set_cover_image(image: ProductImage) -> ProductImage:
     """
-    Promove `image` a capa do produto, removendo a marcação da capa atual (se existir).
+    Marca `image` como capa do produto. Desmarcar a capa atual (se existir) é decisão do service.
     """
-    ProductImage.objects.filter(product_id=image.product_id, is_cover=True).exclude(pk=image.pk).update(is_cover=False)
     image.is_cover = True
+    image.save(update_fields=["is_cover"])
+    return image
+
+
+def unset_cover_image(image: ProductImage) -> ProductImage:
+    image.is_cover = False
     image.save(update_fields=["is_cover"])
     return image
 

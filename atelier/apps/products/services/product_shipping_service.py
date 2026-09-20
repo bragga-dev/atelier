@@ -10,6 +10,7 @@ from atelier.apps.core.exceptions.products_exception import (
     ShippingAlreadyExists,
     ShippingNotFound,
 )
+from atelier.apps.core.utils.fields import drop_none
 from atelier.apps.products.repositories.product_shipping_repository import (
     create_shipping,
     delete_shipping,
@@ -80,7 +81,7 @@ def create_shipping_for_admin(product_id: uuid.UUID, data: ShippingCreateIn) -> 
 
 def update_shipping_for_admin(product_id: uuid.UUID, data: ShippingUpdateIn) -> ShippingOut:
     shipping = _get_shipping_or_raise(product_id)
-    shipping = update_shipping(shipping, **data.dict(exclude_unset=True))
+    shipping = update_shipping(shipping, **drop_none(data.dict(exclude_unset=True)))
     return ShippingOut.from_orm(shipping)
 
 

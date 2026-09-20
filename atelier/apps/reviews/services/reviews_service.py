@@ -55,6 +55,8 @@ from atelier.apps.reviews.schemas.reviews_schema import (
     ReviewsUpdateIn,
 )
 
+REVIEWS_FIELDS = {"comment", "reviews"}
+
 
 @transaction.atomic
 def recalculate_product_average_rating(product_id: UUID) -> dict:
@@ -159,7 +161,12 @@ def update_own_review(user_id: UUID, reviews_id: UUID, data: ReviewsUpdateIn) ->
     fields = data.model_dump(exclude_unset=True)
     content_changed = bool(fields)
 
-    reviews = update_reviews(reviews, **fields)
+    unknown = set(fields) - REVIEWS_FIELDS
+    if unknown:
+        raise ValueError(f"Campos não atualizáveis na Avaliação: {', '.join(sorted(unknown))}")
+
+    if fields:
+        reviews = update_reviews(reviews, **fields)
 
     if content_changed and reviews.is_authorized:
         reviews = revoke_rating_authorization(reviews=reviews)
