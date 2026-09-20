@@ -74,6 +74,7 @@ LOCAL_APPS = [
     "atelier.apps.reviews",
     "atelier.apps.website",
     "atelier.apps.notifications",
+    "atelier.apps.chat",
    
 ]
 
