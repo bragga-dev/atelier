@@ -37,6 +37,11 @@ from atelier.apps.core.exceptions import (
 )
 from atelier.apps.core.validators.chat_attachment_validator import get_attachment_type
 
+from atelier.apps.chat.repositories.message_repository import mark_messages_as_read
+from atelier.apps.chat.selectors.message_selector import get_unread_messages_for_reader
+
+
+
 MAX_ATTACHMENTS_PER_MESSAGE = 5
 
 
@@ -45,7 +50,6 @@ def _group_name(conversation_id: UUID) -> str:
 
 
 def broadcast_message(message_out: MessageOut) -> None:
-    """Manda a mensagem já serializada pro grupo da conversa no channel layer."""
     channel_layer = get_channel_layer()
     if channel_layer is None:
         return
@@ -121,6 +125,7 @@ def list_messages(*, user_id: UUID, conversation_id: UUID) -> List[MessageOut]:
     return [MessageOut.from_orm(m) for m in messages]
 
 
+
 def mark_conversation_as_read(*, user_id: UUID, conversation_id: UUID) -> int:
     conversation = get_conversation_by_id(conversation_id)
     if conversation is None:
@@ -131,7 +136,8 @@ def mark_conversation_as_read(*, user_id: UUID, conversation_id: UUID) -> int:
         raise UserNotFound()
     _ensure_participant(conversation, user)
 
-    updated = mark_conversation_messages_as_read(conversation_id, user_id)
+    unread = get_unread_messages_for_reader(conversation_id, user_id)
+    updated = mark_messages_as_read(unread)
 
     if updated:
         channel_layer = get_channel_layer()

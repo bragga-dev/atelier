@@ -1,6 +1,6 @@
 from atelier.apps.chat.repositories.conversation_repository import (
     close_conversation,
-    get_or_create_conversation,
+    open_conversation,
     touch_last_message,
 )
 from atelier.apps.chat.repositories.message_repository import (
@@ -11,7 +11,7 @@ from atelier.apps.chat.repositories.message_repository import (
 
 __all__ = [
     "close_conversation",
-    "get_or_create_conversation",
+    "open_conversation",
     "touch_last_message",
     "add_attachment",
     "create_message",

@@ -5,8 +5,6 @@ from typing import Optional
 from uuid import UUID
 
 from atelier.apps.accounts.selectors.user_selector import get_user_by_id
-from atelier.apps.chat.models.conversation_model import Conversation
-from atelier.apps.chat.repositories.conversation_repository import get_or_create_conversation
 from atelier.apps.chat.schemas.chat_schema import ConversationOut
 from atelier.apps.chat.selectors.conversation_selector import (
     get_all_conversations,
@@ -17,6 +15,11 @@ from atelier.apps.core.exceptions import ConversationNotFound, PermissionDenied,
 from atelier.apps.core.permissions.roles import is_admin
 from atelier.apps.payments.selectors.order_selector import get_order_by_id
 
+from atelier.apps.chat.repositories.conversation_repository import create_conversation
+from atelier.apps.chat.selectors.conversation_selector import (
+    get_open_conversation_for_client_and_order,
+)
+
 
 def start_or_resume_conversation(client_user_id: UUID, order_id: Optional[UUID] = None) -> ConversationOut:
     client = get_user_by_id(user_id=client_user_id)
@@ -25,8 +28,13 @@ def start_or_resume_conversation(client_user_id: UUID, order_id: Optional[UUID] 
 
     order = get_order_by_id(order_id=order_id) if order_id else None
 
-    conversation, _created = get_or_create_conversation(client=client, order=order)
+    conversation = get_open_conversation_for_client_and_order(client=client, order=order)
+    if conversation is None:
+        subject = f"Pedido {order.code}" if order else ""
+        conversation = create_conversation(client=client, order=order, subject=subject)
+
     return ConversationOut.from_orm(conversation)
+
 
 
 def get_conversation_for_user(user_id: UUID, conversation_id: UUID) -> ConversationOut:

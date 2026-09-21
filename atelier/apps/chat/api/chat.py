@@ -23,7 +23,6 @@ from atelier.apps.core.schemas.deafult_schema import MessageOut as ErrorOut
 from atelier.apps.chat.schemas.chat_schema import (
     ConversationOut,
     MessageOut,
-    SendMessageIn,
     StartConversationIn,
 )
 from atelier.apps.chat.services.conversation_service import (

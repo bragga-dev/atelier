@@ -1,5 +1,4 @@
-from typing import Iterable
-
+# atelier/apps/chat/repositories/message_repository.py
 from django.utils import timezone
 
 from atelier.apps.accounts.models.user_model import User
@@ -15,7 +14,14 @@ def create_message(conversation: Conversation, sender: User, content: str = "") 
     return message
 
 
-def add_attachment(message: Message, *, file, file_type: str, original_filename: str, file_size: int) -> MessageAttachment:
+def add_attachment(
+    message: Message,
+    *,
+    file,
+    file_type: str,
+    original_filename: str,
+    file_size: int,
+) -> MessageAttachment:
     attachment = MessageAttachment(
         message=message,
         file=file,
@@ -28,10 +34,5 @@ def add_attachment(message: Message, *, file, file_type: str, original_filename:
     return attachment
 
 
-def mark_conversation_messages_as_read(conversation_id, reader_id) -> int:
-    """Marca como lidas as mensagens da conversa que NÃO foram enviadas pelo próprio leitor."""
-    return (
-        Message.objects.filter(conversation_id=conversation_id, is_read=False)
-        .exclude(sender_id=reader_id)
-        .update(is_read=True, read_at=timezone.now())
-    )
+def mark_messages_as_read(queryset) -> int:
+    return queryset.update(is_read=True, read_at=timezone.now())

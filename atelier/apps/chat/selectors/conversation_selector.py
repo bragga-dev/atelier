@@ -27,3 +27,11 @@ def user_can_access_conversation(conversation: Conversation, user) -> bool:
     from atelier.apps.core.permissions.roles import is_admin
 
     return is_admin(user) or conversation.client_id == user.user_id
+
+
+def get_open_conversation_for_client_and_order(client, order=None):
+    return Conversation.objects.filter(
+        client=client,
+        order=order,
+        status=Conversation.Status.OPEN,
+    ).first()
