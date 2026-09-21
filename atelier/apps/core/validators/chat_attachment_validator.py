@@ -1,18 +1,20 @@
 import os
 
+import magic
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import UploadedFile
 from django.utils.translation import gettext_lazy as _
-from ninja import UploadedFile
 from PIL import Image, UnidentifiedImageError
 
 # =========================================================
 # VALIDAÇÃO DE ANEXO DE CHAT (foto, vídeo, PDF, TXT)
 # =========================================================
-# Diferente de `validate_image_file` (produtos), aqui aceitamos vários
-# tipos de arquivo num único campo, então a extensão decide qual conjunto
-# de regras aplicar. Vídeo/PDF/TXT são validados só por extensão + tamanho
-# (não temos uma lib de sniff de conteúdo tipo `python-magic` no projeto);
-# imagem reaproveita a verificação real do Pillow, que já existe.
+# Duas camadas: extensão decide qual conjunto de regras aplicar, e
+# `python-magic` (libmagic) confere o CONTEÚDO real dos primeiros bytes
+# do arquivo — pega o caso de alguém renomear um .exe pra .pdf pra passar
+# pela validação de extensão. Imagem, além disso, é reaberta com Pillow
+# pra confirmar que decodifica de verdade (mesmo rigor já usado nas
+# imagens de produto).
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".webm"}
@@ -25,6 +27,25 @@ MAX_VIDEO_SIZE_MB = 50
 MAX_DOCUMENT_SIZE_MB = 10
 
 VALID_IMAGE_FORMATS = {"JPEG", "PNG", "WEBP"}
+
+# MIME real (via libmagic) esperado por extensão. Um mesmo formato às
+# vezes é reportado com mais de um MIME válido dependendo da versão do
+# libmagic (ex: .mov pode vir como quicktime ou como mp4 genérico, por
+# como os dois formatos compartilham o container ISO base media), por
+# isso algumas entradas aceitam mais de um valor.
+EXPECTED_MIME_BY_EXTENSION = {
+    ".jpg": {"image/jpeg"},
+    ".jpeg": {"image/jpeg"},
+    ".png": {"image/png"},
+    ".webp": {"image/webp"},
+    ".mp4": {"video/mp4"},
+    ".mov": {"video/quicktime", "video/mp4"},
+    ".webm": {"video/webm"},
+    ".pdf": {"application/pdf"},
+    ".txt": {"text/plain"},
+}
+
+_SNIFF_BYTES = 2048
 
 
 class ChatAttachmentType:
@@ -47,11 +68,35 @@ def get_attachment_type(filename: str) -> str:
     )
 
 
+def _sniff_mime(value) -> str:
+    value.seek(0)
+    header = value.read(_SNIFF_BYTES)
+    value.seek(0)
+    return magic.from_buffer(header, mime=True)
+
+
+def _validate_content_matches_extension(value, ext: str) -> None:
+    detected_mime = _sniff_mime(value)
+    expected = EXPECTED_MIME_BY_EXTENSION.get(ext, set())
+    if detected_mime not in expected:
+        raise ValidationError(
+            _(
+                "O conteúdo do arquivo (%(detected)s) não corresponde à extensão "
+                "'%(ext)s'. Isso costuma acontecer quando um arquivo é renomeado "
+                "pra outra extensão."
+            ),
+            params={"detected": detected_mime, "ext": ext},
+        )
+
+
 def validate_chat_attachment_file(value) -> None:
     if not isinstance(value, UploadedFile):
         return
 
+    ext = os.path.splitext(value.name)[-1].lower()
     attachment_type = get_attachment_type(value.name)
+
+    _validate_content_matches_extension(value, ext)
 
     if attachment_type == ChatAttachmentType.IMAGE:
         _validate_image(value)

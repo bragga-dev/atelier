@@ -21,6 +21,7 @@ from atelier.apps.website.api.campaign import router as campaign_router
 from atelier.apps.website.api.contact import router as contact_router
 from atelier.apps.products.api.image import router as product_image_router
 from atelier.apps.notifications.api.notification import router as notification_router
+from atelier.apps.chat.api.chat import router as chat_router
 
 from django_ratelimit.exceptions import Ratelimited
 import logging
@@ -64,6 +65,7 @@ api.add_router("/campaigns/", campaign_router, tags=["Campaigns"])
 api.add_router("/contact/", contact_router, tags=["Contact"])
 api.add_router("/products/", product_image_router, tags=["Imagens de Produto"])
 api.add_router("/notifications/", notification_router, tags=["Notifications"])
+api.add_router("/chat/", chat_router, tags=["Chat"])
 # ── Handlers de erro globais ──────────────────────────────────────────────────
 
 @api.exception_handler(ValidationError)

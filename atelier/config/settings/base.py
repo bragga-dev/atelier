@@ -36,6 +36,7 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 # =========================================================
 
 DJANGO_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -50,6 +51,7 @@ DJANGO_APPS = [
 # =========================================================
 
 THIRD_PARTY_APPS = [
+    "channels",
     "ninja",
     "ninja_extra",
     "ninja_jwt",
@@ -237,6 +239,20 @@ REDIS_URL = env(
     "REDIS_URL",
     default="redis://localhost:6379/0",
 )
+
+# =========================================================
+# CHANNELS (WEBSOCKET) — reaproveita o mesmo Redis do Celery/cache
+# =========================================================
+ASGI_APPLICATION = "atelier.config.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_URL],
+        },
+    },
+}
 
 # =========================================================
 # CELERY (REDIS)

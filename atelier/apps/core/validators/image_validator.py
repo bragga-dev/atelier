@@ -4,7 +4,7 @@ from PIL import Image, UnidentifiedImageError
 import os
 from django.core.exceptions import ValidationError
 import logging
-from ninja import UploadedFile
+from django.core.files.uploadedfile import UploadedFile
 
 
 
@@ -79,4 +79,4 @@ def validate_image_file(value):
     except Exception:
         raise ValidationError(_("Não foi possível processar a imagem."))
     finally:
-        value.seek(0) 
+        value.seek(0)

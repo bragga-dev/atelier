@@ -31,6 +31,12 @@ from atelier.apps.core.exceptions.products_exception import (
 )
 from atelier.apps.core.exceptions.campaign_exception import CampaignNotFound, CampaignTitleAlreadyExists, CampaignImageNotFound
 from atelier.apps.core.exceptions.notification_exception import NotificationNotFound
+from atelier.apps.core.exceptions.chat_exception import (
+    ConversationNotFound,
+    MessageNotFound,
+    EmptyMessage,
+    TooManyAttachments,
+)
 
 __all__ = [
     
@@ -78,5 +84,10 @@ __all__ = [
     "CampaignImageNotFound",
 
     "NotificationNotFound",
+
+    "ConversationNotFound",
+    "MessageNotFound",
+    "EmptyMessage",
+    "TooManyAttachments",
 
 ]

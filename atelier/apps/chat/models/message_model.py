@@ -1,4 +1,3 @@
-# atelier/apps/chat/models/message_model.py
 import uuid
 
 from django.core.exceptions import ValidationError
@@ -8,11 +7,6 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Message(models.Model):
-    """
-    Uma mensagem dentro de uma Conversation. Pode ter só texto, só
-    anexo(s), ou os dois — mas não pode ser totalmente vazia (ver `clean`).
-    """
-
     message_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     conversation = models.ForeignKey("chat.Conversation", on_delete=models.CASCADE, related_name="messages", verbose_name=_("Conversa"))
     sender = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="sent_messages", verbose_name=_("Remetente"))
@@ -35,10 +29,6 @@ class Message(models.Model):
         return f"{self.sender}: {preview}"
 
     def clean(self):
-        # Só valida texto vazio aqui — "tem pelo menos 1 anexo" depende de
-        # `self.attachments`, que só existe depois que a mensagem já tem
-        # pk salvo. Essa outra metade da regra fica no service, na hora de
-        # criar a mensagem junto com seus anexos.
         super().clean()
 
     def mark_as_read(self):

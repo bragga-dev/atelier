@@ -1,4 +1,4 @@
-FROM python:3.12-bullseye
+FROM python:3.12-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -7,6 +7,7 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
+    libmagic1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
