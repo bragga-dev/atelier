@@ -37,7 +37,7 @@ from atelier.apps.core.exceptions import (
 )
 from atelier.apps.core.validators.chat_attachment_validator import get_attachment_type
 
-from atelier.apps.chat.repositories.message_repository import mark_messages_as_read
+from atelier.apps.chat.repositories.message_repository import mark_as_read
 from atelier.apps.chat.selectors.message_selector import get_unread_messages_for_reader
 
 
@@ -112,38 +112,41 @@ def send_message(
 
 
 def list_messages(*, user_id: UUID, conversation_id: UUID) -> List[MessageOut]:
-    conversation = get_conversation_by_id(conversation_id)
+    conversation = get_conversation_by_id(conversation_id=conversation_id)
     if conversation is None:
         raise ConversationNotFound()
 
     user = get_user_by_id(user_id=user_id)
     if user is None:
         raise UserNotFound()
-    _ensure_participant(conversation, user)
+    _ensure_participant(conversation=conversation, user=user)
 
-    messages = get_messages_for_conversation(conversation_id)
+    messages = get_messages_for_conversation(conversation_id=conversation_id)
     return [MessageOut.from_orm(m) for m in messages]
 
 
-
 def mark_conversation_as_read(*, user_id: UUID, conversation_id: UUID) -> int:
-    conversation = get_conversation_by_id(conversation_id)
+    conversation = get_conversation_by_id(conversation_id=conversation_id)
     if conversation is None:
         raise ConversationNotFound()
 
     user = get_user_by_id(user_id=user_id)
     if user is None:
         raise UserNotFound()
-    _ensure_participant(conversation, user)
+    _ensure_participant(conversation=conversation, user=user)
 
-    unread = get_unread_messages_for_reader(conversation_id, user_id)
-    updated = mark_messages_as_read(unread)
+    unread_messages = get_unread_messages_for_reader(conversation_id=conversation_id, reader_id=user_id)
+
+    updated = 0
+    for message in unread_messages:
+        mark_as_read(message=message)
+        updated += 1
 
     if updated:
         channel_layer = get_channel_layer()
         if channel_layer is not None:
             async_to_sync(channel_layer.group_send)(
-                _group_name(conversation_id),
+                _group_name(conversation_id=conversation_id),
                 {"type": "chat.read", "reader_id": str(user_id)},
             )
     return updated

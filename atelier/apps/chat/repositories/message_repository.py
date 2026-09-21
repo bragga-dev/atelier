@@ -34,5 +34,8 @@ def add_attachment(
     return attachment
 
 
-def mark_messages_as_read(queryset) -> int:
-    return queryset.update(is_read=True, read_at=timezone.now())
+def mark_as_read(message: Message) -> Message:
+    message.is_read = True
+    message.read_at = timezone.now()
+    message.save(update_fields=["is_read", "read_at"])
+    return message
