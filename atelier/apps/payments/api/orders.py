@@ -8,6 +8,7 @@ from ninja import Router, Status
 from django_ratelimit.decorators import ratelimit
 
 from atelier.apps.accounts.models.user_model import User
+from atelier.apps.payments.models.order_model import Order
 from atelier.apps.core.exceptions import EmptyCart, OrderNotFound, OrderNotPayable, UserNotFound
 from atelier.apps.core.exceptions.cart_exception import InsufficientStock
 from atelier.apps.core.exceptions.permissions import PermissionDenied
@@ -20,6 +21,9 @@ from atelier.apps.payments.services.order_service import (
     get_order_for_client,
     list_orders_for_client,
 )
+
+from django.shortcuts import get_object_or_404
+from atelier.apps.products.integrations.frenet_service import FrenetService
 
 router = Router()
 
@@ -88,3 +92,22 @@ def cancel_order_router(request, order_id: uuid.UUID, payload: OrderCancelIn = N
         return Status(404, {"detail": str(e)})
     except OrderNotPayable as e:
         return Status(409, {"detail": str(e)})
+
+
+@router.post("/orders/{order_id}/generate-label")
+def generate_label(request, order_id: int):
+    order = get_object_or_404(Order, id=order_id)
+
+    if order.shipping_status != Order.ShippingStatus.PENDING:
+        return {"error": "Etiqueta já foi gerada para este pedido"}, 400
+
+    service = FrenetService()
+    result = service.create_shipment(order)
+
+    order.frenet_order_id = result["OrderID"]
+    order.shipping_tracking_code = result.get("TrackingNumber")
+    order.shipping_label_url = result.get("LabelURL")
+    order.shipping_status = Order.ShippingStatus.LABEL_GENERATED
+    order.save()
+
+    return {"success": True, "tracking_code": order.shipping_tracking_code}
