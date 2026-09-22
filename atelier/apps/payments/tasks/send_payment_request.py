@@ -64,7 +64,7 @@ def send_payment_request(self, user_id: uuid.UUID, payment_id: uuid.UUID) -> Non
         }
 
         send_html_email(
-            subject="Pagamento — ÉLUXO MODAS",
+            subject="Pagamento — SOL E ARTE",
             to_email=user.email,
             template_name="payment/emails/send_payment_request.html",
             context=context,

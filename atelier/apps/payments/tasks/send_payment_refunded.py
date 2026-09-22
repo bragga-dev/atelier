@@ -48,7 +48,7 @@ def send_payment_refunded(self, order_id: uuid.UUID) -> None:
         }
 
         send_html_email(
-            subject=f"Pagamento estornado — pedido {order.code} — ÉLUXO MODAS",
+            subject=f"Pagamento estornado — pedido {order.code} — SOL E ARTE",
             to_email=user.email,
             template_name="payment/emails/payment_refunded.html",
             context=context,

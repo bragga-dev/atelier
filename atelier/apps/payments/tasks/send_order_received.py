@@ -51,7 +51,7 @@ def send_order_received(self, user_id: uuid.UUID, order_id: uuid.UUID) -> None:
         }
 
         send_html_email(
-            subject=f"Recebemos seu pedido {order.code} — ÉLUXO MODAS",
+            subject=f"Recebemos seu pedido {order.code} — SOL E ARTE",
             to_email=user.email,
             template_name="payment/emails/order_received.html",
             context=context,

@@ -49,7 +49,7 @@ def send_payment_confirmed(self, order_id: uuid.UUID) -> None:
         }
 
         send_html_email(
-            subject=f"Pagamento confirmado — pedido {order.code} — ÉLUXO MODAS",
+            subject=f"Pagamento confirmado — pedido {order.code} — SOL E ARTE",
             to_email=user.email,
             template_name="payment/emails/payment_confirmed.html",
             context=context,

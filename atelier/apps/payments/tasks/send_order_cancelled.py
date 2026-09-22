@@ -51,7 +51,7 @@ def send_order_cancelled(self, order_id: uuid.UUID) -> None:
         }
 
         send_html_email(
-            subject=f"Pedido {order.code} cancelado — ÉLUXO MODAS",
+            subject=f"Pedido {order.code} cancelado — SOL E ARTE",
             to_email=user.email,
             template_name="payment/emails/order_cancelled.html",
             context=context,
