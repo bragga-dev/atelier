@@ -21,6 +21,11 @@ class FrenetService:
         }
 
     def create_shipment(self, order: "Order") -> dict:
+        if not order.shipping_service_code:
+            raise FrenetAPIError(
+                "Pedido não possui um serviço de frete (shipping_service_code) selecionado."
+            )
+
         payload = self._build_shipment_payload(order)
         try:
             resp = requests.post(
@@ -55,30 +60,33 @@ class FrenetService:
 
 
     def _build_shipment_payload(self, order):
+        client = getattr(order.user_id, "client_profile", None)
+        recipient_name = client.get_full_name() if client else order.user_id.email
+
         return {
             "SellerCEP": settings.STORE_CEP,
-            "RecipientCEP": order.shipping_address.zip_code,
+            "RecipientCEP": order.shipping_address.cep,
             "ShippingServiceCode": order.shipping_service_code,
             "Invoice": {
-                "Number": order.id,
-                "TotalValue": float(order.total_value),
+                "Number": order.code,
+                "TotalValue": float(order.total_geral),
             },
             "ShippingItemArray": [
                 {
-                    "Name": item.product.name,
-                    "Quantity": item.quantity,
-                    "Weight": item.product.weight,
+                    "Name": item.product_id.product_name,
+                    "Quantity": item.order_item_quantity,
+                    "Weight": float(item.product_id.shipping.weight),
                 }
                 for item in order.items.all()
             ],
             "Recipient": {
-                "Name": order.customer.name,
-                "Email": order.customer.email,
+                "Name": recipient_name,
+                "Email": order.user_id.email,
                 "Address": order.shipping_address.street,
                 "Number": order.shipping_address.number,
-                "District": order.shipping_address.district,
+                "District": order.shipping_address.neighborhood,
                 "City": order.shipping_address.city,
                 "State": order.shipping_address.state,
-                "ZipCode": order.shipping_address.zip_code,
+                "ZipCode": order.shipping_address.cep,
             },
         }

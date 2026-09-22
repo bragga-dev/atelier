@@ -12,7 +12,7 @@ from atelier.apps.payments.models.order_model import Order
 from atelier.apps.core.exceptions import EmptyCart, OrderNotFound, OrderNotPayable, UserNotFound
 from atelier.apps.core.exceptions.cart_exception import InsufficientStock
 from atelier.apps.core.exceptions.permissions import PermissionDenied
-from atelier.apps.core.permissions.auth_classes import ClientOnlyAuth, ClientCompleteProfileAuth
+from atelier.apps.core.permissions.auth_classes import AdminOnlyAuth, ClientOnlyAuth, ClientCompleteProfileAuth
 from atelier.apps.core.schemas.deafult_schema import MessageOut
 from atelier.apps.payments.schemas.order_schema import OrderCancelIn, OrderCreateIn, OrderOut
 from atelier.apps.payments.services.order_service import (
@@ -23,7 +23,11 @@ from atelier.apps.payments.services.order_service import (
 )
 
 from django.shortcuts import get_object_or_404
-from atelier.apps.products.integrations.frenet_service import FrenetService
+from atelier.apps.products.integrations.frenet_service import (
+    FrenetAPIError,
+    FrenetInsufficientBalanceError,
+    FrenetService,
+)
 
 router = Router()
 
@@ -94,15 +98,28 @@ def cancel_order_router(request, order_id: uuid.UUID, payload: OrderCancelIn = N
         return Status(409, {"detail": str(e)})
 
 
-@router.post("/orders/{order_id}/generate-label")
-def generate_label(request, order_id: int):
-    order = get_object_or_404(Order, id=order_id)
+@router.post(
+    "/{order_id}/generate-label",
+    response={200: dict, 400: MessageOut, 404: MessageOut, 502: MessageOut},
+    auth=AdminOnlyAuth(),
+    summary="Gera a etiqueta de envio de um pedido na Frenet (uso administrativo/fulfillment)",
+)
+def generate_label(request, order_id: uuid.UUID):
+    order = get_object_or_404(Order, order_id=order_id)
 
     if order.shipping_status != Order.ShippingStatus.PENDING:
-        return {"error": "Etiqueta já foi gerada para este pedido"}, 400
+        return Status(400, {"detail": "Etiqueta já foi gerada para este pedido."})
+
+    if not order.shipping_service_code:
+        return Status(400, {"detail": "Pedido não possui um serviço de frete selecionado."})
 
     service = FrenetService()
-    result = service.create_shipment(order)
+    try:
+        result = service.create_shipment(order)
+    except FrenetInsufficientBalanceError as e:
+        return Status(400, {"detail": str(e)})
+    except FrenetAPIError as e:
+        return Status(502, {"detail": str(e)})
 
     order.frenet_order_id = result["OrderID"]
     order.shipping_tracking_code = result.get("TrackingNumber")
@@ -110,4 +127,4 @@ def generate_label(request, order_id: int):
     order.shipping_status = Order.ShippingStatus.LABEL_GENERATED
     order.save()
 
-    return {"success": True, "tracking_code": order.shipping_tracking_code}
+    return Status(200, {"success": True, "tracking_code": order.shipping_tracking_code})

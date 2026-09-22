@@ -46,6 +46,7 @@ class Order(models.Model):
     created_at = models.DateTimeField(_("Data da compra"), auto_now_add=True)
     updated_at = models.DateTimeField(_("Data de atualização"), auto_now=True)
     
+    shipping_service_code = models.CharField(_("Código do serviço Frenet"), max_length=50, blank=True, null=True, help_text=_("Service code retornado pela cotação Frenet e escolhido pelo cliente no checkout."))
     frenet_order_id = models.CharField(max_length=100, blank=True, null=True)
     shipping_tracking_code = models.CharField(max_length=100, blank=True, null=True)
     shipping_label_url = models.URLField(blank=True, null=True)
