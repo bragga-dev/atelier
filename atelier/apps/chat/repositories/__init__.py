@@ -6,7 +6,6 @@ from atelier.apps.chat.repositories.conversation_repository import (
 from atelier.apps.chat.repositories.message_repository import (
     add_attachment,
     create_message,
-    mark_conversation_messages_as_read,
 )
 
 __all__ = [
@@ -15,5 +14,4 @@ __all__ = [
     "touch_last_message",
     "add_attachment",
     "create_message",
-    "mark_conversation_messages_as_read",
 ]

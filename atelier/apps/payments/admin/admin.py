@@ -51,46 +51,46 @@ class AsaasCustomerAdmin(admin.ModelAdmin):
 
 
 
-@admin.register(Order)
-class OrderAdmin(admin.ModelAdmin):
-    list_display = ["id", "customer", "status", "shipping_status", "generate_label_button"]
-    readonly_fields = ["shipping_tracking_code", "shipping_label_url"]
+# @admin.register(Order)
+# class OrderAdmin(admin.ModelAdmin):
+#     list_display = ["id", "customer", "status", "shipping_status", "generate_label_button"]
+#     readonly_fields = ["shipping_tracking_code", "shipping_label_url"]
 
-    def generate_label_button(self, obj):
-        if obj.shipping_status == Order.ShippingStatus.PENDING:
-            url = reverse("admin:generate-label", args=[obj.pk])
-            return format_html('<a class="button" href="{}">Gerar etiqueta</a>', url)
-        return "✓ Etiqueta gerada"
-    generate_label_button.short_description = "Ação"
+#     def generate_label_button(self, obj):
+#         if obj.shipping_status == Order.ShippingStatus.PENDING:
+#             url = reverse("admin:generate-label", args=[obj.pk])
+#             return format_html('<a class="button" href="{}">Gerar etiqueta</a>', url)
+#         return "✓ Etiqueta gerada"
+#     generate_label_button.short_description = "Ação"
 
-    def get_urls(self):
-        urls = super().get_urls()
-        custom = [
-            path(
-                "<int:order_id>/generate-label/",
-                self.admin_site.admin_view(self.generate_label_view),
-                name="generate-label",
-            ),
-        ]
-        return custom + urls
+#     def get_urls(self):
+#         urls = super().get_urls()
+#         custom = [
+#             path(
+#                 "<int:order_id>/generate-label/",
+#                 self.admin_site.admin_view(self.generate_label_view),
+#                 name="generate-label",
+#             ),
+#         ]
+#         return custom + urls
 
-    def generate_label_view(self, request, order_id):
-        order = self.get_object(request, order_id)
-        service = FrenetService()
+#     def generate_label_view(self, request, order_id):
+#         order = self.get_object(request, order_id)
+#         service = FrenetService()
 
-        try:
-            result = service.create_shipment(order)
-        except FrenetInsufficientBalanceError:
-            messages.error(request, "Saldo insuficiente na Frenet. Adicione crédito na carteira antes de gerar a etiqueta.")
-            return redirect(f"/admin/orders/order/{order_id}/change/")
-        except FrenetAPIError as e:
-            messages.error(request, str(e))
-            return redirect(f"/admin/orders/order/{order_id}/change/")
+#         try:
+#             result = service.create_shipment(order)
+#         except FrenetInsufficientBalanceError:
+#             messages.error(request, "Saldo insuficiente na Frenet. Adicione crédito na carteira antes de gerar a etiqueta.")
+#             return redirect(f"/admin/orders/order/{order_id}/change/")
+#         except FrenetAPIError as e:
+#             messages.error(request, str(e))
+#             return redirect(f"/admin/orders/order/{order_id}/change/")
 
-        order.frenet_order_id = result["OrderID"]
-        order.shipping_tracking_code = result.get("TrackingNumber")
-        order.shipping_label_url = result.get("LabelURL")
-        order.shipping_status = Order.ShippingStatus.LABEL_GENERATED
-        order.save()
-        messages.success(request, f"Etiqueta gerada: {order.shipping_tracking_code}")
-        return redirect(f"/admin/orders/order/{order_id}/change/")
+#         order.frenet_order_id = result["OrderID"]
+#         order.shipping_tracking_code = result.get("TrackingNumber")
+#         order.shipping_label_url = result.get("LabelURL")
+#         order.shipping_status = Order.ShippingStatus.LABEL_GENERATED
+#         order.save()
+#         messages.success(request, f"Etiqueta gerada: {order.shipping_tracking_code}")
+#         return redirect(f"/admin/orders/order/{order_id}/change/")

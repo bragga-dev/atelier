@@ -20,7 +20,6 @@ from atelier.apps.chat.repositories.conversation_repository import touch_last_me
 from atelier.apps.chat.repositories.message_repository import (
     add_attachment,
     create_message,
-    mark_conversation_messages_as_read,
 )
 from atelier.apps.chat.schemas.chat_schema import MessageOut
 from atelier.apps.chat.selectors.conversation_selector import (
