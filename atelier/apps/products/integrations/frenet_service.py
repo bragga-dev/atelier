@@ -20,6 +20,7 @@ class FrenetService:
             "token": settings.FRENET_API_KEY,
         }
 
+
     def create_shipment(self, order: "Order") -> dict:
         if not order.shipping_service_code:
             raise FrenetAPIError(
@@ -36,8 +37,11 @@ class FrenetService:
             )
             resp.raise_for_status()
         except requests.exceptions.HTTPError as exc:
-            data = exc.response.json() if exc.response.content else {}
-            message = data.get("Msg", "") or data.get("message", "")
+            try:
+                data = exc.response.json() if exc.response.content else {}
+            except ValueError:
+                data = {}
+            message = data.get("Msg", "") or data.get("message", "") or exc.response.text
 
             if exc.response.status_code == 402 or "saldo" in message.lower():
                 raise FrenetInsufficientBalanceError(
@@ -47,6 +51,14 @@ class FrenetService:
             raise FrenetAPIError(f"Erro na API Frenet: {message or exc}") from exc
         except requests.exceptions.RequestException as exc:
             raise FrenetAPIError(f"Falha de conexão com a Frenet: {exc}") from exc
+
+        try:
+            return resp.json()
+        except ValueError as exc:
+            raise FrenetAPIError(
+                "A Frenet retornou uma resposta em formato inesperado (não-JSON) para o envio."
+            ) from exc
+
 
         return resp.json()
     def get_label(self, shipment_id: str) -> dict:

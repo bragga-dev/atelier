@@ -469,6 +469,17 @@ FRENET_BASE_URL = env("FRENET_BASE_URL", default="https://api.frenet.com.br")
 FRENET_API_KEY = env("FRENET_API_KEY")
 STORE_CEP = env("STORE_CEP")
 
+
+# =========================================================
+# FRENET
+# =========================================================
+FRENET_BASE_URL = env("FRENET_BASE_URL", default="https://api.frenet.com.br")
+FRENET_API_KEY = env("FRENET_API_KEY")
+STORE_CEP = env("STORE_CEP")
+FRENET_WHITELABEL_BASE_URL = env("FRENET_WHITELABEL_BASE_URL", default="https://whitelabel-hml.frenet.dev")
+FRENET_PARTNER_TOKEN = env("FRENET_PARTNER_TOKEN", default="")
+
+
 # ==============================================================
 # CRYPTOGRAPHY
 # ==============================================================
