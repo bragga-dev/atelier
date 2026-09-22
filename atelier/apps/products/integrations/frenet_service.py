@@ -11,6 +11,10 @@ class FrenetAPIError(Exception):
     pass
 
 
+class FrenetPartnerTokenMissingError(FrenetAPIError):
+    pass
+
+
 class FrenetService:
     BASE_URL = "https://api.frenet.com.br"
 
@@ -27,6 +31,27 @@ class FrenetService:
                 "Pedido não possui um serviço de frete (shipping_service_code) selecionado."
             )
 
+        # A geração de etiqueta (Orders Oneclick) roda na API Whitelabel da
+        # Frenet, que exige um Partner Token além do token do cliente. Esse
+        # token só é emitido pelo time de Parcerias da Frenet após um
+        # processo de homologação — enquanto não configurado, falhamos aqui
+        # com uma mensagem clara em vez de bater num endpoint que não existe
+        # mais na API antiga (o que gerava 502 com HTML de erro).
+        if not getattr(settings, "FRENET_PARTNER_TOKEN", ""):
+            raise FrenetPartnerTokenMissingError(
+                "Geração de etiqueta indisponível: falta configurar o "
+                "FRENET_PARTNER_TOKEN (Partner Token da Frenet, obtido após "
+                "homologação com o time de Parcerias). A API de pedidos/"
+                "etiquetas da Frenet roda na Whitelabel v1 e exige esse "
+                "token além do FRENET_API_KEY."
+            )
+
+        # TODO: assim que o Partner Token for liberado, trocar a chamada
+        # abaixo pelo endpoint real da Whitelabel (Orders Oneclick), usando
+        # settings.FRENET_WHITELABEL_BASE_URL e o header x-partner-token —
+        # o payload precisa ser conferido contra a documentação/sandbox
+        # deles nesse momento, pois o formato é diferente do usado na
+        # cotação (api.frenet.com.br).
         payload = self._build_shipment_payload(order)
         try:
             resp = requests.post(
@@ -59,8 +84,6 @@ class FrenetService:
                 "A Frenet retornou uma resposta em formato inesperado (não-JSON) para o envio."
             ) from exc
 
-
-        return resp.json()
     def get_label(self, shipment_id: str) -> dict:
         resp = requests.get(
             f"{self.BASE_URL}/shipping/ordertracking/{shipment_id}",

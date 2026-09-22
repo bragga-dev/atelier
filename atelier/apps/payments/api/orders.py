@@ -29,6 +29,13 @@ from atelier.apps.products.integrations.frenet_service import (
     FrenetService,
 )
 
+from atelier.apps.products.integrations.frenet_service import (
+    FrenetAPIError,
+    FrenetInsufficientBalanceError,
+    FrenetPartnerTokenMissingError,
+    FrenetService,
+)
+
 router = Router()
 
 
@@ -116,6 +123,8 @@ def generate_label(request, order_id: uuid.UUID):
     service = FrenetService()
     try:
         result = service.create_shipment(order)
+    except FrenetPartnerTokenMissingError as e:
+        return Status(400, {"detail": str(e)})
     except FrenetInsufficientBalanceError as e:
         return Status(400, {"detail": str(e)})
     except FrenetAPIError as e:
