@@ -368,7 +368,7 @@ NINJA_JWT = {
 
     # ── Algoritmo e chave ─────────────────────────────────────────────────
     "ALGORITHM":   "HS256",
-    "SIGNING_KEY": env("SECRET_KEY"),  # ou uma chave JWT independente (recomendado)
+    "SIGNING_KEY": env("JWT_SIGNING_KEY", default=SECRET_KEY),
     "VERIFYING_KEY": None,
 
     # ── Header ────────────────────────────────────────────────────────────
