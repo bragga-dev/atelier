@@ -9,7 +9,6 @@ from django.urls import path, reverse
 from django.shortcuts import redirect
 from django.utils.html import format_html
 from django.contrib import messages
-from atelier.apps.products.integrations.frenet_service import FrenetService, FrenetInsufficientBalanceError, FrenetAPIError
 
 
 class OrderItemInline(admin.TabularInline):

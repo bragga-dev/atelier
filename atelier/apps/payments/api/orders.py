@@ -22,19 +22,13 @@ from atelier.apps.payments.services.order_service import (
     list_orders_for_client,
 )
 
-from django.shortcuts import get_object_or_404
-from atelier.apps.products.integrations.frenet_service import (
-    FrenetAPIError,
-    FrenetInsufficientBalanceError,
-    FrenetService,
-)
-
-from atelier.apps.products.integrations.frenet_service import (
+from atelier.apps.core.exceptions.shipping import (
     FrenetAPIError,
     FrenetInsufficientBalanceError,
     FrenetPartnerTokenMissingError,
-    FrenetService,
+    OrderLabelNotAllowed,
 )
+from atelier.apps.payments.services.order_shipping_service import generate_label_for_order
 
 router = Router()
 
@@ -109,31 +103,24 @@ def cancel_order_router(request, order_id: uuid.UUID, payload: OrderCancelIn = N
     "/{order_id}/generate-label",
     response={200: dict, 400: MessageOut, 404: MessageOut, 502: MessageOut},
     auth=AdminOnlyAuth(),
-    summary="Gera a etiqueta de envio de um pedido na Frenet (uso administrativo/fulfillment)",
+    summary="Gera (e paga com o saldo da carteira) a etiqueta de envio na Frenet — uso administrativo",
 )
 def generate_label(request, order_id: uuid.UUID):
-    order = get_object_or_404(Order, order_id=order_id)
-
-    if order.shipping_status != Order.ShippingStatus.PENDING:
-        return Status(400, {"detail": "Etiqueta já foi gerada para este pedido."})
-
-    if not order.shipping_service_code:
-        return Status(400, {"detail": "Pedido não possui um serviço de frete selecionado."})
-
-    service = FrenetService()
     try:
-        result = service.create_shipment(order)
-    except FrenetPartnerTokenMissingError as e:
-        return Status(400, {"detail": str(e)})
-    except FrenetInsufficientBalanceError as e:
+        order = generate_label_for_order(order_id)
+    except Order.DoesNotExist:
+        return Status(404, {"detail": "Pedido não encontrado."})
+    except (OrderLabelNotAllowed, FrenetPartnerTokenMissingError, FrenetInsufficientBalanceError) as e:
         return Status(400, {"detail": str(e)})
     except FrenetAPIError as e:
         return Status(502, {"detail": str(e)})
 
-    order.frenet_order_id = result["OrderID"]
-    order.shipping_tracking_code = result.get("TrackingNumber")
-    order.shipping_label_url = result.get("LabelURL")
-    order.shipping_status = Order.ShippingStatus.LABEL_GENERATED
-    order.save()
-
-    return Status(200, {"success": True, "tracking_code": order.shipping_tracking_code})
+    return Status(
+        200,
+        {
+            "success": True,
+            "frenet_shipment_id": order.frenet_order_id,
+            "tracking_code": order.shipping_tracking_code,
+            "label_url": order.shipping_label_url,
+        },
+    )

@@ -3,7 +3,13 @@ from atelier.apps.core.exceptions.user import UserAlreadyExists, UserNotFound, E
 from atelier.apps.core.exceptions.permissions import PermissionDenied
 from atelier.apps.core.exceptions.media import InvalidImageFile
 from atelier.apps.core.exceptions.contact_exception import ContactNameAlreadyExists, ContactNotFound
-from atelier.apps.core.exceptions.shipping import FrenetAPIError
+from atelier.apps.core.exceptions.shipping import (
+    FrenetAPIError,
+    FrenetInsufficientBalanceError,
+    FrenetLabelError,
+    FrenetPartnerTokenMissingError,
+    OrderLabelNotAllowed,
+)
 from atelier.apps.core.exceptions.cart_exception import CartNotFound, CartItemNotFound, InsufficientStock
 from atelier.apps.core.exceptions.payment_exception import (
     
@@ -54,6 +60,10 @@ __all__ = [
     "ContactNotFound",
 
     "FrenetAPIError",
+    "FrenetInsufficientBalanceError",
+    "FrenetLabelError",
+    "FrenetPartnerTokenMissingError",
+    "OrderLabelNotAllowed",
 
     "CartNotFound",
     "CartItemNotFound",
