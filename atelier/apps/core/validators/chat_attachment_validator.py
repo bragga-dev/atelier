@@ -3,6 +3,7 @@ import os
 import magic
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
+from django.db.models.fields.files import FieldFile
 from django.utils.translation import gettext_lazy as _
 from PIL import Image, UnidentifiedImageError
 
@@ -90,6 +91,12 @@ def _validate_content_matches_extension(value, ext: str) -> None:
 
 
 def validate_chat_attachment_file(value) -> None:
+    # Via model/full_clean o validator recebe um FieldFile, não o UploadedFile.
+    # Se ainda não foi salvo no storage, o upload original está em `.file`.
+    if isinstance(value, FieldFile):
+        if value._committed:
+            return  # já está no storage: não revalida
+        value = value.file
     if not isinstance(value, UploadedFile):
         return
 

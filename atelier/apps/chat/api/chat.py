@@ -9,7 +9,7 @@ from typing import List, Optional
 from uuid import UUID
 
 from django_ratelimit.decorators import ratelimit
-from ninja import File, Form, Router, UploadedFile
+from ninja import File, Form, Router, Status, UploadedFile
 
 from atelier.apps.accounts.models.user_model import User
 from atelier.apps.core.exceptions import (
@@ -53,7 +53,7 @@ router = Router()
 @ratelimit(key="user", rate="10/m", block=True)
 def start_conversation_router(request, payload: StartConversationIn):
     user: User = request.auth
-    return 201, start_or_resume_conversation(client_user_id=user.user_id, order_id=payload.order_id)
+    return Status(201, start_or_resume_conversation(client_user_id=user.user_id, order_id=payload.order_id))
 
 
 @router.get(
@@ -65,7 +65,7 @@ def start_conversation_router(request, payload: StartConversationIn):
 @ratelimit(key="user", rate="30/m", block=True)
 def list_my_conversations_router(request):
     user: User = request.auth
-    return 200, list_conversations_for_client(client_user_id=user.user_id)
+    return Status(200, list_conversations_for_client(client_user_id=user.user_id))
 
 
 @router.get(
@@ -76,7 +76,7 @@ def list_my_conversations_router(request):
 )
 @ratelimit(key="user", rate="30/m", block=True)
 def list_all_conversations_router(request, status: Optional[str] = None):
-    return 200, list_conversations_for_admin(status=status)
+    return Status(200, list_conversations_for_admin(status=status))
 
 
 @router.get(
@@ -89,11 +89,11 @@ def list_all_conversations_router(request, status: Optional[str] = None):
 def get_conversation_router(request, conversation_id: UUID):
     user: User = request.auth
     try:
-        return 200, get_conversation_for_user(user_id=user.user_id, conversation_id=conversation_id)
+        return Status(200, get_conversation_for_user(user_id=user.user_id, conversation_id=conversation_id))
     except ConversationNotFound as e:
-        return 404, {"detail": str(e)}
+        return Status(404, {"detail": str(e)})
     except PermissionDenied as e:
-        return 403, {"detail": str(e)}
+        return Status(403, {"detail": str(e)})
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -110,11 +110,11 @@ def get_conversation_router(request, conversation_id: UUID):
 def list_messages_router(request, conversation_id: UUID):
     user: User = request.auth
     try:
-        return 200, list_messages(user_id=user.user_id, conversation_id=conversation_id)
+        return Status(200, list_messages(user_id=user.user_id, conversation_id=conversation_id))
     except ConversationNotFound as e:
-        return 404, {"detail": str(e)}
+        return Status(404, {"detail": str(e)})
     except PermissionDenied as e:
-        return 403, {"detail": str(e)}
+        return Status(403, {"detail": str(e)})
 
 
 @router.post(
@@ -144,13 +144,13 @@ def send_message_router(
             content=content,
             files=files or [],
         )
-        return 201, message
+        return Status(201, message)
     except ConversationNotFound as e:
-        return 404, {"detail": str(e)}
+        return Status(404, {"detail": str(e)})
     except PermissionDenied as e:
-        return 403, {"detail": str(e)}
+        return Status(403, {"detail": str(e)})
     except (EmptyMessage, TooManyAttachments) as e:
-        return 400, {"detail": str(e)}
+        return Status(400, {"detail": str(e)})
 
 
 @router.post(
@@ -164,8 +164,8 @@ def mark_as_read_router(request, conversation_id: UUID):
     user: User = request.auth
     try:
         updated = mark_conversation_as_read(user_id=user.user_id, conversation_id=conversation_id)
-        return 200, {"updated": updated}
+        return Status(200, {"updated": updated})
     except ConversationNotFound as e:
-        return 404, {"detail": str(e)}
+        return Status(404, {"detail": str(e)})
     except PermissionDenied as e:
-        return 403, {"detail": str(e)}
+        return Status(403, {"detail": str(e)})
