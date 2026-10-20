@@ -39,7 +39,7 @@ def send_verification_email(self, user_id: str) -> None:
         }
 
         send_html_email(
-            subject="Confirme seu e-mail — ÉLUXO MODAS",
+            subject="Confirme seu e-mail — Sol e Arte",
             to_email=user.email,
             template_name="accounts/emails/verification_email.html",
             context=context,

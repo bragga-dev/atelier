@@ -18,9 +18,6 @@ from atelier.apps.accounts.models.user_model import User
 from atelier.apps.payments.models.order_item_model import OrderItem
 
 
-REVIEWS_FIELDS = {"comment", "reviews"}
-
-
 @transaction.atomic
 def create_reviews(*, user: User, order_item: OrderItem, reviews: int, comment: Optional[str] = None) -> Reviews:
     reviews = Reviews(
@@ -40,13 +37,6 @@ def update_reviews(instance: Reviews, **fields) -> Reviews:
     chama `reviews`, então um parâmetro com esse mesmo nome colide com a
     chave `"reviews"` vinda de `**fields` (`TypeError: multiple values`).
     """
-    unknown = set(fields) - REVIEWS_FIELDS
-    if unknown:
-        raise ValueError(f"Campos não atualizáveis na Avaliação: {', '.join(sorted(unknown))}")
-
-    if not fields:
-        return instance
-
     for field, value in fields.items():
         setattr(instance, field, value)
 

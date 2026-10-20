@@ -5,7 +5,6 @@ CampaignImage Repository — persistência de CampaignImage.
 from django.core.files import File
 from django.db import transaction
 
-from atelier.apps.core.tasks.media import delete_old_media_file
 from atelier.apps.website.models.campaignImage_model import CampaignImage
 
 
@@ -36,24 +35,21 @@ def update_campaign_image(campaign_image: CampaignImage, **fields) -> CampaignIm
 
 
 def delete_campaign_image(campaign_image: CampaignImage) -> None:
-    old_name = campaign_image.image.name if campaign_image.image else None
     campaign_image.delete()
-    if old_name:
-        delete_old_media_file.delay(old_name)
 
 
 @transaction.atomic
 def set_cover_campaign_image(campaign_image: CampaignImage) -> CampaignImage:
-    CampaignImage.objects.filter(
-        campaign=campaign_image.campaign,
-        is_cover=True,
-    ).exclude(
-        pk=campaign_image.pk,
-    ).update(
-        is_cover=False,
+    campaign_image.is_cover = True
+    campaign_image.save(
+        update_fields=["is_cover"],
     )
 
-    campaign_image.is_cover = True
+    return campaign_image
+
+
+def unset_cover_campaign_image(campaign_image: CampaignImage) -> CampaignImage:
+    campaign_image.is_cover = False
     campaign_image.save(
         update_fields=["is_cover"],
     )

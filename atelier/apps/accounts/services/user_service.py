@@ -48,6 +48,7 @@ from atelier.apps.accounts.tasks.verification_account import (
 from atelier.apps.core.exceptions.permissions import PermissionDenied
 from atelier.apps.core.exceptions.auth import InvalidGoogleToken, InvalidPassword
 from atelier.apps.core.exceptions.user import UserAlreadyExists
+from atelier.apps.core.utils.fields import drop_none
 
 
 from atelier.apps.core.exceptions.user import UserNotFound
@@ -74,7 +75,7 @@ def update_client_profile(user_id: uuid.UUID, payload: ClientUpdateIn) -> Client
     if user.role != User.UserRole.CLIENT:
         raise PermissionDenied("Apenas clientes podem atualizar este perfil.")
 
-    fields = payload.dict(exclude_unset=True)
+    fields = drop_none(payload.dict(exclude_unset=True))
     updated_client = update_client(client=user.client_profile, **fields)
     return ClientOut.from_orm(updated_client)
 
@@ -126,8 +127,10 @@ def login_or_register_client_google(id_token: str, user_agent: str = "") -> tupl
         user = create_user(email=email, password=None, role=User.UserRole.CLIENT)
         create_client(
             user,
-            first_name=claims.get("given_name"),
-            last_name=claims.get("family_name"),
+            **drop_none({
+                "first_name": claims.get("given_name"),
+                "last_name": claims.get("family_name"),
+            }),
         )
         create_cart(user)
         created = True

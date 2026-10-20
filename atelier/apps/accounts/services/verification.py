@@ -36,4 +36,7 @@ def verify_email(uidb64: str, token: str) -> User:
 
     if not default_token_generator.check_token(user, token):
         raise InvalidToken("Token inválido ou expirado.")
-    return activate_user(user)
+
+    if not user.is_active or not user.is_trusty:
+        user = activate_user(user)
+    return user

@@ -29,6 +29,7 @@ from atelier.apps.core.exceptions.address import (
 )
 from atelier.apps.core.exceptions.permissions import ClientNotFoundError
 from atelier.apps.core.exceptions.user import UserNotFound
+from atelier.apps.core.utils.fields import drop_none
 
 
 def _get_own_client_address(user_id: UUID, address_id: UUID) -> AddressesClient:
@@ -65,34 +66,34 @@ def register_address_for_client(user_id: UUID, data: AddressCreateIn) -> Address
     """Registra um novo endereço para o cliente."""
     client = _get_client_by_user_id_or_raise(user_id)
     
-    address = create_address(
-        client_id=client,
-        cep=data.cep,
-        street=data.street,
-        number=data.number,
-        complement=data.complement,
-        neighborhood=data.neighborhood,
-        city=data.city,
-        state=data.state,
-        country=data.country,
-    )
+    fields = drop_none({
+        "cep": data.cep,
+        "street": data.street,
+        "number": data.number,
+        "complement": data.complement,
+        "neighborhood": data.neighborhood,
+        "city": data.city,
+        "state": data.state,
+        "country": data.country,
+    })
+    address = create_address(client_id=client, **fields)
     return AddressOut.from_orm(address)
 
 
 def update_address_for_client(user_id: UUID, address_id: UUID, payload: AddressUpdateIn) -> AddressOut:
     """Atualiza um endereço existente do cliente."""
     address = _get_own_client_address(user_id=user_id, address_id=address_id)
-    address = update_address(
-        address=address,
-        cep=payload.cep,
-        street=payload.street,
-        number=payload.number,
-        complement=payload.complement,
-        neighborhood=payload.neighborhood,
-        city=payload.city,
-        state=payload.state,
-        country=payload.country,
-    )
+    fields = drop_none({
+        "cep": payload.cep,
+        "street": payload.street,
+        "number": payload.number,
+        "complement": payload.complement,
+        "neighborhood": payload.neighborhood,
+        "city": payload.city,
+        "state": payload.state,
+        "country": payload.country,
+    })
+    address = update_address(address=address, **fields)
     return AddressOut.from_orm(address)
 
 

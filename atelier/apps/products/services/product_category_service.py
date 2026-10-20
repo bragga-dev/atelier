@@ -14,7 +14,10 @@ from atelier.apps.core.exceptions.products_exception import (
     CategoryNameAlreadyExists,
     CategoryNotFound,
 )
+from atelier.apps.core.tasks.media import delete_old_media_file
+from atelier.apps.core.utils.fields import drop_none
 from atelier.apps.core.validators.image_validator import validate_image_file
+from atelier.apps.products.models.product_category_model import DEFAULT_CATEGORY_IMAGE
 from atelier.apps.products.repositories.product_category_repository import (
     activate_category, 
     create_category, 
@@ -77,7 +80,7 @@ def update_category_for_admin(product_category_id: uuid.UUID, data: ProductCateg
     if data.category_name is not None and category_name_exists(data.category_name, exclude_id=product_category_id):
         raise CategoryNameAlreadyExists()
 
-    category = update_category(category, **data.dict(exclude_unset=True))
+    category = update_category(category, **drop_none(data.dict(exclude_unset=True)))
     return ProductCategoryOut.from_orm(category)
 
 
@@ -90,13 +93,15 @@ def delete_category_for_admin(product_category_id: uuid.UUID) -> None:
 
 def activate_category_for_admin(product_category_id: uuid.UUID) -> ProductCategoryOut:
     category = _get_category_or_raise(product_category_id)
-    category = activate_category(category)
+    if not category.is_active:
+        category = activate_category(category)
     return ProductCategoryOut.from_orm(category)
 
 
 def deactivate_category_for_admin(product_category_id: uuid.UUID) -> ProductCategoryOut:
     category = _get_category_or_raise(product_category_id)
-    category = deactivate_category(category)
+    if category.is_active:
+        category = deactivate_category(category)
     return ProductCategoryOut.from_orm(category)
 
 
@@ -108,11 +113,25 @@ def upload_category_image_for_admin(product_category_id: uuid.UUID, image: Uploa
     except DjangoValidationError as exc:
         raise InvalidImageFile(exc.messages[0] if getattr(exc, "messages", None) else str(exc))
 
+    old_name = (
+        category.category_image.name
+        if category.category_image and category.category_image.name != DEFAULT_CATEGORY_IMAGE
+        else None
+    )
     category = set_category_image(category, image)
+    if old_name:
+        delete_old_media_file.delay(old_name)
     return ProductCategoryOut.from_orm(category)
 
 
 def remove_category_image_for_admin(product_category_id: uuid.UUID) -> ProductCategoryOut:
     category = _get_category_or_raise(product_category_id)
+    old_name = (
+        category.category_image.name
+        if category.category_image and category.category_image.name != DEFAULT_CATEGORY_IMAGE
+        else None
+    )
     category = remove_category_image(category)
+    if old_name:
+        delete_old_media_file.delay(old_name)
     return ProductCategoryOut.from_orm(category)

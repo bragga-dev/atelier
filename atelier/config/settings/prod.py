@@ -75,7 +75,6 @@ MEDIA_URL = "/media/"
 # =========================================================
 # CACHE (REDIS)
 # =========================================================
-
 CACHES = {
     "default": {
         "BACKEND": (
@@ -93,16 +92,13 @@ CACHES = {
 # =========================================================
 # SESSION
 # =========================================================
-
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
-
 SESSION_CACHE_ALIAS = "default"
 
 
 # =========================================================
 # CELERY
 # =========================================================
-
 CELERY_BROKER_URL = env("REDIS_URL")
 CELERY_RESULT_BACKEND = env("REDIS_URL")
 CELERY_ACCEPT_CONTENT = ["json"]
@@ -114,7 +110,6 @@ CELERY_TIMEZONE = "America/Sao_Paulo"
 # =========================================================
 # DJANGO NINJA
 # =========================================================
-
 NINJA_PAGINATION_CLASS = ("ninja.pagination.LimitOffsetPagination")
 NINJA_PAGINATION_PER_PAGE = 20
 
@@ -122,13 +117,7 @@ NINJA_PAGINATION_PER_PAGE = 20
 # =========================================================
 # CORS
 # =========================================================
-
-CORS_ALLOWED_ORIGINS = env.list(
-    "CORS_ALLOWED_ORIGINS",
-    default=[]
-)
-
-
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 CORS_ALLOW_CREDENTIALS = True
 
 
@@ -137,7 +126,6 @@ CORS_ALLOW_CREDENTIALS = True
 # =========================================================
 # ASAAS
 # =========================================================
-
 ASAAS_API_KEY = env("ASAAS_API_KEY")
 
 ASAAS_BASE_URL = env(
@@ -149,63 +137,39 @@ ASAAS_BASE_URL = env(
 # =========================================================
 # FILE UPLOAD
 # =========================================================
-
-FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
-
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760
 
 
 # =========================================================
 # ADMIN
 # =========================================================
-
-ADMINS = [
-    ("Admin", env("ADMIN_EMAIL")),
-]
+ADMINS = [("Admin", env("ADMIN_EMAIL")),]
 
 
 # =========================================================
 # PASSWORD VALIDATION
 # =========================================================
-
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "UserAttributeSimilarityValidator"
-        ),
-    },
-    {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "MinimumLengthValidator"
-        ),
-        "OPTIONS": {
-            "min_length": 8
-        }
-    },
-]
+AUTH_PASSWORD_VALIDATORS[1]["OPTIONS"] = {"min_length": 8}
 
 
 # =========================================================
 # PERFORMANCE
 # =========================================================
-
 USE_ETAGS = True
 
 
 # =========================================================
 # MINIO PROD
 # =========================================================
-
 AWS_S3_VERIFY = True
 
 AWS_QUERYSTRING_AUTH = False
 
-AWS_S3_CUSTOM_DOMAIN = f"{env('MINIO_PUBLIC_URL', default='localhost:9000')}/{AWS_STORAGE_BUCKET_NAME}"
-MEDIA_URL = f"http://{AWS_S3_CUSTOM_DOMAIN}/"
 MINIO_URL_PROTOCOL = "https:"
 
+AWS_S3_CUSTOM_DOMAIN = f"{env('MINIO_PUBLIC_URL', default='localhost:9000')}/{AWS_STORAGE_BUCKET_NAME}"
+MEDIA_URL = f"{MINIO_URL_PROTOCOL}//{AWS_S3_CUSTOM_DOMAIN}/"
 
 # =========================================================
 # JWT

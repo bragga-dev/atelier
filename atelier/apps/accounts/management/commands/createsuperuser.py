@@ -14,7 +14,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from atelier.apps.accounts.models.user_model import User
-from atelier.apps.accounts.repositories.admin_repository import create_admin_profile
+from atelier.apps.accounts.services.admin_service import create_admin_profile
 from atelier.apps.accounts.selectors.user_selector import email_exists
 
 

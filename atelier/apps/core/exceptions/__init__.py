@@ -3,7 +3,13 @@ from atelier.apps.core.exceptions.user import UserAlreadyExists, UserNotFound, E
 from atelier.apps.core.exceptions.permissions import PermissionDenied
 from atelier.apps.core.exceptions.media import InvalidImageFile
 from atelier.apps.core.exceptions.contact_exception import ContactNameAlreadyExists, ContactNotFound
-from atelier.apps.core.exceptions.shipping import FrenetAPIError
+from atelier.apps.core.exceptions.shipping import (
+    FrenetAPIError,
+    FrenetInsufficientBalanceError,
+    FrenetLabelError,
+    FrenetPartnerTokenMissingError,
+    OrderLabelNotAllowed,
+)
 from atelier.apps.core.exceptions.cart_exception import CartNotFound, CartItemNotFound, InsufficientStock
 from atelier.apps.core.exceptions.payment_exception import (
     
@@ -30,6 +36,13 @@ from atelier.apps.core.exceptions.products_exception import (
     ShippingAlreadyExists,
 )
 from atelier.apps.core.exceptions.campaign_exception import CampaignNotFound, CampaignTitleAlreadyExists, CampaignImageNotFound
+from atelier.apps.core.exceptions.notification_exception import NotificationNotFound
+from atelier.apps.core.exceptions.chat_exception import (
+    ConversationNotFound,
+    MessageNotFound,
+    EmptyMessage,
+    TooManyAttachments,
+)
 
 __all__ = [
     
@@ -47,6 +60,10 @@ __all__ = [
     "ContactNotFound",
 
     "FrenetAPIError",
+    "FrenetInsufficientBalanceError",
+    "FrenetLabelError",
+    "FrenetPartnerTokenMissingError",
+    "OrderLabelNotAllowed",
 
     "CartNotFound",
     "CartItemNotFound",
@@ -75,5 +92,12 @@ __all__ = [
     "CampaignNotFound",
     "CampaignTitleAlreadyExists",
     "CampaignImageNotFound",
+
+    "NotificationNotFound",
+
+    "ConversationNotFound",
+    "MessageNotFound",
+    "EmptyMessage",
+    "TooManyAttachments",
 
 ]

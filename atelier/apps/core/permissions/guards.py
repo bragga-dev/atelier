@@ -210,16 +210,16 @@ def require_verified_client(user) -> None:
 # Guards para API (Ninja)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def api_guard(guard_func: Callable):
-    """
-    Decorator para aplicar guards em endpoints Ninja.
-    """
-    def decorator(func):
-        @wraps(func)
+def guard_multiple(*guards: Callable):
+    def decorator(view_func):
+        @wraps(view_func)
         def wrapper(request, *args, **kwargs):
-            guard_func(request.user)
-            return func(request, *args, **kwargs)
+            for guard_func in guards:
+                guard_func(request.user)
+            return view_func(request, *args, **kwargs)
         return wrapper
     return decorator
 
+
+api_guard = guard
 

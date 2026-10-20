@@ -36,6 +36,7 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 # =========================================================
 
 DJANGO_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -50,6 +51,7 @@ DJANGO_APPS = [
 # =========================================================
 
 THIRD_PARTY_APPS = [
+    "channels",
     "ninja",
     "ninja_extra",
     "ninja_jwt",
@@ -73,6 +75,8 @@ LOCAL_APPS = [
     "atelier.apps.cart",
     "atelier.apps.reviews",
     "atelier.apps.website",
+    "atelier.apps.notifications",
+    "atelier.apps.chat",
    
 ]
 
@@ -237,6 +241,20 @@ REDIS_URL = env(
 )
 
 # =========================================================
+# CHANNELS (WEBSOCKET) — reaproveita o mesmo Redis do Celery/cache
+# =========================================================
+ASGI_APPLICATION = "atelier.config.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_URL],
+        },
+    },
+}
+
+# =========================================================
 # CELERY (REDIS)
 # =========================================================
 CELERY_BROKER_URL = env(
@@ -350,7 +368,7 @@ NINJA_JWT = {
 
     # ── Algoritmo e chave ─────────────────────────────────────────────────
     "ALGORITHM":   "HS256",
-    "SIGNING_KEY": env("SECRET_KEY"),  # ou uma chave JWT independente (recomendado)
+    "SIGNING_KEY": env("JWT_SIGNING_KEY", default=SECRET_KEY),
     "VERIFYING_KEY": None,
 
     # ── Header ────────────────────────────────────────────────────────────
@@ -447,8 +465,21 @@ ORIGIN_ZIP_CODE = "45201347"
 # =========================================================
 # FRENET
 # =========================================================
+# Cotação (API de cliente) — só exige o token do cliente.
 FRENET_BASE_URL = env("FRENET_BASE_URL", default="https://api.frenet.com.br")
 FRENET_API_KEY = env("FRENET_API_KEY")
+STORE_CEP = env("STORE_CEP")
+
+# Etiquetas (Orders OneClick) — API Whitelabel, exige Partner Token.
+# Só existe produção (o ambiente hml foi desativado pela Frenet).
+FRENET_WHITELABEL_BASE_URL = env("FRENET_WHITELABEL_BASE_URL", default="https://whitelabel.apifrenet.com.br")
+FRENET_PARTNER_TOKEN = env("FRENET_PARTNER_TOKEN", default="")
+FRENET_PRINTING_FORMAT = env("FRENET_PRINTING_FORMAT", default="")  # vazio = A4 (padrão da Frenet)
+# Base pública do backend que recebe os webhooks (ex.: https://api.seudominio.com). Vazio = não envia.
+FRENET_WEBHOOK_BASE_URL = env("FRENET_WEBHOOK_BASE_URL", default="")
+# Header de segurança opcional dos webhooks (a Frenet precisa ser avisada do par nome/valor).
+FRENET_WEBHOOK_TOKEN_NAME = env("FRENET_WEBHOOK_TOKEN_NAME", default="FRENET_INTEGRATION")
+FRENET_WEBHOOK_TOKEN_VALUE = env("FRENET_WEBHOOK_TOKEN_VALUE", default="")
 
 
 # ==============================================================

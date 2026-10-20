@@ -15,11 +15,14 @@ from atelier.apps.payments.api.orders import router as orders_router
 from atelier.apps.payments.api.payments import router as payments_router
 from atelier.apps.payments.api.dashboard import router as dashboard_router
 from atelier.apps.payments.api.webhook import router as asaas_webhook_router
+from atelier.apps.payments.api.frenet_webhook import router as frenet_webhook_router
 from atelier.apps.accounts.api.address import router as address_router
 from atelier.apps.reviews.api.reviews import router as reviews_router
 from atelier.apps.website.api.campaign import router as campaign_router
 from atelier.apps.website.api.contact import router as contact_router
 from atelier.apps.products.api.image import router as product_image_router
+from atelier.apps.notifications.api.notification import router as notification_router
+from atelier.apps.chat.api.chat import router as chat_router
 
 from django_ratelimit.exceptions import Ratelimited
 import logging
@@ -51,6 +54,7 @@ api.add_router("/auth/", auth_router, tags=["Auth"])
 api.add_router("/admin/", admin_router, tags=["Admin"])
 api.add_router("/categories/", category_router, tags=["Category"])
 api.add_router("/products/", product_router, tags=["Produtos"])
+api.add_router("/shipping/webhooks/frenet", frenet_webhook_router, tags=["Webhooks"])
 api.add_router("/shipping/", frenet_router, tags=["Shipping"])
 api.add_router("/cart/", cart_router, tags=["Cart"])
 api.add_router("/orders/", orders_router, tags=["Orders"])
@@ -62,6 +66,8 @@ api.add_router("/reviews/", reviews_router, tags=["Reviews"])
 api.add_router("/campaigns/", campaign_router, tags=["Campaigns"])
 api.add_router("/contact/", contact_router, tags=["Contact"])
 api.add_router("/products/", product_image_router, tags=["Imagens de Produto"])
+api.add_router("/notifications/", notification_router, tags=["Notifications"])
+api.add_router("/chat/", chat_router, tags=["Chat"])
 # ── Handlers de erro globais ──────────────────────────────────────────────────
 
 @api.exception_handler(ValidationError)

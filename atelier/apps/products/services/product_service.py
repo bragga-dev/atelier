@@ -16,7 +16,6 @@ from atelier.apps.core.exceptions.products_exception import (
 )
 from atelier.apps.products.repositories.product_repository import (
     activate_product,
-    adjust_product_stock,
     create_product,
     deactivate_product,
     delete_product,
@@ -199,7 +198,7 @@ def adjust_product_stock_for_admin(product_id: uuid.UUID, delta: int) -> Product
     product = _get_product_or_raise(product_id=product_id)
     if product.stock + delta < 0:
         raise InsufficientStock()
-    product = adjust_product_stock(product=product, delta=delta)
+    product = set_product_stock(product=product, stock=product.stock + delta)
     return ProductOut.from_orm(product)
 
 

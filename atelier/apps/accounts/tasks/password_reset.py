@@ -32,7 +32,7 @@ def send_password_reset_email(self, user_id: str, uid: str, token: str) -> None:
         }
 
         send_html_email(
-            subject="Redefinição de senha — ÉLUXO MODAS",
+            subject="Redefinição de senha — SOL E ARTE",
             to_email=user.email,
             template_name="accounts/emails/password_reset.html",
             context=context,
